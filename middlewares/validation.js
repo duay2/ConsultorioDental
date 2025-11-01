@@ -319,6 +319,64 @@ const validateUpdatePaymentStatus = [
     handleValidationErrors
 ];
 
+// :id en la ruta (GET/PUT/DELETE /api/patients/:id)
+const validatePatientIdParam = [
+  param('id')
+    .isInt({ min: 1 }).withMessage('El ID debe ser un número entero positivo'),
+  handleValidationErrors
+];
+
+// ?email= en query (GET /api/patients/email)
+const validatePatientEmailQuery = [
+  query('email')
+    .notEmpty().withMessage('email es requerido')
+    .isEmail().withMessage('email debe ser válido'),
+  handleValidationErrors
+];
+
+// POST /api/patients
+const validateCreatePatient = [
+  body('first_name').notEmpty().withMessage('first_name es requerido').isString(),
+  body('last_name').notEmpty().withMessage('last_name es requerido').isString(),
+  body('email').notEmpty().withMessage('email es requerido').isEmail(),
+  body('birth_date')
+    .notEmpty().withMessage('birth_date es requerido')
+    .isISO8601().withMessage('birth_date debe ser ISO (YYYY-MM-DD)'),
+  body('phone').optional().isString(),
+  body('address').optional().isString(),
+  body('insurance').optional().isString(),
+  handleValidationErrors
+];
+
+// PUT /api/patients/:id
+const validateUpdatePatient = [
+  param('id').isInt({ min: 1 }).withMessage('El ID debe ser un número entero positivo'),
+  body('first_name').optional().isString(),
+  body('last_name').optional().isString(),
+  body('email').optional().isEmail(),
+  body('birth_date').optional().isISO8601().withMessage('birth_date debe ser ISO'),
+  body('phone').optional().isString(),
+  body('address').optional().isString(),
+  body('insurance').optional().isString(),
+  handleValidationErrors
+];
+
+// GET /api/patients/search?q=
+const validateSearchQuery = [
+  query('q')
+    .notEmpty().withMessage('q es requerido')
+    .isLength({ min: 2 }).withMessage('q debe tener al menos 2 caracteres'),
+  handleValidationErrors
+];
+
+// POST /api/patients/:id/orthodontics/adjustments
+const validateOrthodonticAdjustment = [
+  body('description').notEmpty().withMessage('description es requerido').isString(),
+  body('notes').optional().isString(),
+  body('next_date').optional().isISO8601().withMessage('next_date debe ser ISO'),
+  handleValidationErrors
+];
+
 module.exports = {
     validateCreateAppointment,
     validateUpdateAppointment,
@@ -331,6 +389,12 @@ module.exports = {
     validateUpdateDentalRecord,
     validateDentalRecordId,
     validateUpdatePaymentStatus,
+    validatePatientIdParam,
+    validatePatientEmailQuery,
+    validateCreatePatient,
+    validateUpdatePatient,
+    validateSearchQuery,
+    validateOrthodonticAdjustment,
     handleValidationErrors
 };
 
