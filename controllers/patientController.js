@@ -1,0 +1,131 @@
+/**
+ * Controlador REST de Patients
+ * CRUD + búsqueda + ortodoncia (usa modelo Patient.js y JWT)
+ */
+
+const Patient = require('../models/Patient');
+const databaseConnection = require('../config/database');
+
+const pick = (obj, keys) =>
+  Object.fromEntries(Object.entries(obj || {}).filter(([k]) => keys.includes(k)));
+
+const allowed = ['first_name', 'last_name', 'email', 'phone', 'birth_date', 'address', 'insurance', 'orthodontics'];
+
+// GET /api/patients?page=&limit=
+async function getAllPatients(req, res, next) {
+  try {
+    if (!databaseConnection.isConnectionActive()) await databaseConnection.connect();
+    const page = +req.query.page || 1, limit = +req.query.limit || 10;
+    const model = new Patient();
+    const result = await model.findAll(page, limit);
+    res.json({
+      message: 'Pacientes obtenidos',
+      data: result.patients,
+      pagination: { total: result.total, page, limit }
+    });
+  } catch (e) { next(e); }
+}
+
+// GET /api/patients/:id
+async function getPatientById(req, res, next) {
+  try {
+    if (!databaseConnection.isConnectionActive()) await databaseConnection.connect();
+    const model = new Patient();
+    const p = await model.findById(+req.params.id);
+    if (!p) return res.status(404).json({ error: 'Paciente no encontrado' });
+    res.json({ message: 'Paciente obtenido', data: p });
+  } catch (e) { next(e); }
+}
+
+// GET /api/patients/email?email=
+async function getPatientByEmail(req, res, next) {
+  try {
+    if (!databaseConnection.isConnectionActive()) await databaseConnection.connect();
+    const model = new Patient();
+    const p = await model.findByEmail(req.query.email);
+    if (!p) return res.status(404).json({ error: 'No encontrado' });
+    res.json({ message: 'Paciente obtenido', data: p });
+  } catch (e) { next(e); }
+}
+
+// GET /api/patients/search?q=
+async function searchPatients(req, res, next) {
+  try {
+    if (!databaseConnection.isConnectionActive()) await databaseConnection.connect();
+    const model = new Patient();
+    const list = await model.searchByName(req.query.q || '');
+    res.json({ message: 'Resultados', data: list });
+  } catch (e) { next(e); }
+}
+
+// POST /api/patients
+async function createPatient(req, res, next) {
+  try {
+    if (!databaseConnection.isConnectionActive()) await databaseConnection.connect();
+    const model = new Patient();
+    const data = pick(req.body, allowed);
+    const created = await model.create(data);
+    res.status(201).json({ message: 'Paciente creado', data: created });
+  } catch (e) {
+    if (String(e.message).includes('ya existe'))
+      return res.status(409).json({ error: e.message });
+    next(e);
+  }
+}
+
+// PUT /api/patients/:id
+async function updatePatient(req, res, next) {
+  try {
+    if (!databaseConnection.isConnectionActive()) await databaseConnection.connect();
+    const id = +req.params.id;
+    const model = new Patient();
+    const exists = await model.findById(id);
+    if (!exists) return res.status(404).json({ error: 'No encontrado' });
+
+    if (req.body.email && req.body.email !== exists.email) {
+      const dup = await model.findByEmail(req.body.email);
+      if (dup) return res.status(409).json({ error: 'Email duplicado' });
+    }
+
+    const data = pick(req.body, allowed);
+    const r = await model.update(id, data);
+    if (!r.modifiedCount) return res.status(400).json({ error: 'No se actualizó' });
+
+    const updated = await model.findById(id);
+    res.json({ message: 'Paciente actualizado', data: updated });
+  } catch (e) { next(e); }
+}
+
+// DELETE /api/patients/:id
+async function deletePatient(req, res, next) {
+  try {
+    if (!databaseConnection.isConnectionActive()) await databaseConnection.connect();
+    const model = new Patient();
+    const r = await model.delete(+req.params.id);
+    if (!r.deletedCount) return res.status(404).json({ error: 'No encontrado' });
+    res.status(204).send();
+  } catch (e) { next(e); }
+}
+
+// POST /api/patients/:id/orthodontics/adjustments
+async function addOrthodonticAdjustment(req, res, next) {
+  try {
+    if (!databaseConnection.isConnectionActive()) await databaseConnection.connect();
+    const model = new Patient();
+    const r = await model.addOrthodonticAdjustment(+req.params.id, req.body);
+    if (!r.modifiedCount) return res.status(400).json({ error: 'No se agregó ajuste' });
+    const p = await model.findById(+req.params.id);
+    res.status(201).json({ message: 'Ajuste agregado', data: p.orthodontics });
+  } catch (e) { next(e); }
+}
+
+module.exports = {
+  getAllPatients,
+  getPatientById,
+  getPatientByEmail,
+  searchPatients,
+  createPatient,
+  updatePatient,
+  deletePatient,
+  addOrthodonticAdjustment
+};
