@@ -8,6 +8,7 @@ const databaseConnection = require('./config/database');
 // Importar rutas
 const appointmentRoutes = require('./routes/appointment');
 const authRoutes = require('./routes/auth');
+const userRoutes = require('./routes/user');
 
 // Importar middleware de manejo de errores
 const errorHandler = require('./middlewares/errorHandler');
@@ -35,6 +36,9 @@ app.use('/api/auth', authRoutes);
 // Rutas de appointments (requieren JWT)
 app.use('/api/appointments', appointmentRoutes);
 
+// Rutas de users (requieren JWT)
+app.use('/api/users', userRoutes);
+
 // Manejo de rutas no encontradas
 app.use((req, res) => {
     res.status(404).json({
@@ -50,7 +54,15 @@ app.use((req, res) => {
             'POST /api/appointments',
             'PUT /api/appointments/:id',
             'PATCH /api/appointments/:id/status',
-            'DELETE /api/appointments/:id'
+            'DELETE /api/appointments/:id',
+            'GET /api/users',
+            'GET /api/users/:id',
+            'GET /api/users/email?email=xxx@xxx.com',
+            'GET /api/users/role?role=doctor',
+            'GET /api/users/search?name=Juan',
+            'POST /api/users',
+            'PUT /api/users/:id',
+            'DELETE /api/users/:id'
         ]
     });
 });
@@ -78,8 +90,9 @@ async function startServer() {
             console.log(`Health check: http://localhost:${PORT}/health`);
             console.log(`Login: POST http://localhost:${PORT}/api/auth/login`);
             console.log(`Appointments: http://localhost:${PORT}/api/appointments`);
+            console.log(`Users: http://localhost:${PORT}/api/users`);
             console.log('='.repeat(60));
-            console.log('NOTA: Todas las rutas de appointments requieren autenticación JWT');
+            console.log('NOTA: Todas las rutas de appointments y users requieren autenticación JWT');
             console.log('='.repeat(60));
         });
     } catch (error) {

@@ -147,6 +147,117 @@ const validatePagination = [
     handleValidationErrors
 ];
 
+/**
+ * Validaciones para crear un usuario (POST)
+ */
+const validateCreateUser = [
+    body('email')
+        .notEmpty().withMessage('El email es requerido')
+        .isEmail().withMessage('El email debe tener un formato válido'),
+    body('password')
+        .notEmpty().withMessage('La contraseña es requerida')
+        .isString().withMessage('La contraseña debe ser una cadena de texto')
+        .isLength({ min: 6 }).withMessage('La contraseña debe tener al menos 6 caracteres'),
+    body('name')
+        .notEmpty().withMessage('El nombre es requerido')
+        .isString().withMessage('El nombre debe ser una cadena de texto')
+        .trim(),
+    body('last_name')
+        .optional()
+        .isString().withMessage('El apellido debe ser una cadena de texto')
+        .trim(),
+    body('role')
+        .notEmpty().withMessage('El rol es requerido')
+        .isIn(['admin', 'doctor', 'assistant', 'receptionist']).withMessage('El rol debe ser: admin, doctor, assistant o receptionist'),
+    body('specialty')
+        .optional()
+        .isString().withMessage('La especialidad debe ser una cadena de texto')
+        .trim(),
+    body('phone')
+        .optional()
+        .isString().withMessage('El teléfono debe ser una cadena de texto')
+        .trim(),
+    handleValidationErrors
+];
+
+/**
+ * Validaciones para actualizar un usuario (PUT)
+ */
+const validateUpdateUser = [
+    param('id')
+        .isInt({ min: 1 }).withMessage('El ID debe ser un número entero positivo'),
+    body('email')
+        .optional()
+        .isEmail().withMessage('El email debe tener un formato válido'),
+    body('password')
+        .optional()
+        .isString().withMessage('La contraseña debe ser una cadena de texto')
+        .isLength({ min: 6 }).withMessage('La contraseña debe tener al menos 6 caracteres'),
+    body('name')
+        .optional()
+        .isString().withMessage('El nombre debe ser una cadena de texto')
+        .trim(),
+    body('last_name')
+        .optional()
+        .isString().withMessage('El apellido debe ser una cadena de texto')
+        .trim(),
+    body('role')
+        .optional()
+        .isIn(['admin', 'doctor', 'assistant', 'receptionist']).withMessage('El rol debe ser: admin, doctor, assistant o receptionist'),
+    body('specialty')
+        .optional()
+        .isString().withMessage('La especialidad debe ser una cadena de texto')
+        .trim(),
+    body('phone')
+        .optional()
+        .isString().withMessage('El teléfono debe ser una cadena de texto')
+        .trim(),
+    body('is_active')
+        .optional()
+        .isBoolean().withMessage('is_active debe ser un valor booleano'),
+    handleValidationErrors
+];
+
+/**
+ * Validaciones para obtener un usuario por ID
+ */
+const validateUserId = [
+    param('id')
+        .isInt({ min: 1 }).withMessage('El ID debe ser un número entero positivo'),
+    handleValidationErrors
+];
+
+/**
+ * Validaciones para buscar usuario por email
+ */
+const validateEmail = [
+    query('email')
+        .notEmpty().withMessage('El email es requerido')
+        .isEmail().withMessage('El email debe tener un formato válido'),
+    handleValidationErrors
+];
+
+/**
+ * Validaciones para buscar usuarios por rol
+ */
+const validateRole = [
+    query('role')
+        .notEmpty().withMessage('El rol es requerido')
+        .isIn(['admin', 'doctor', 'assistant', 'receptionist']).withMessage('El rol debe ser: admin, doctor, assistant o receptionist'),
+    handleValidationErrors
+];
+
+/**
+ * Validaciones para buscar usuarios por nombre
+ */
+const validateNameSearch = [
+    query('name')
+        .notEmpty().withMessage('El término de búsqueda es requerido')
+        .isString().withMessage('El término de búsqueda debe ser una cadena de texto')
+        .trim(),
+    handleValidationErrors
+];
+
 module.exports = {
     validateCreateAppointment,
     validateUpdateAppointment,
@@ -155,6 +266,12 @@ module.exports = {
     validateDate,
     validatePatientId,
     validatePagination,
+    validateCreateUser,
+    validateUpdateUser,
+    validateUserId,
+    validateEmail,
+    validateRole,
+    validateNameSearch,
     handleValidationErrors
 };
 
