@@ -1,0 +1,51 @@
+========================================
+COMANDOS GIT - Copiar y Pegar en PowerShell
+========================================
+
+1. Ir a la carpeta del proyecto:
+cd c:\Users\diegs\Downloads\Asig08
+
+2. Verificar estado actual:
+git status
+
+3. Verificar rama actual:
+git branch --show-current
+
+4. Si no estás en la rama Diego, cambiarte:
+git checkout Diego
+
+5. Agregar todos los archivos:
+git add .
+
+6. Hacer commit:
+git commit -m "Implementación REST completa para Appointment con JWT y validaciones"
+
+7. Verificar que el commit se hizo:
+git log --oneline -1
+
+8. Ver todas las ramas (ahora sí debería mostrar Diego):
+git branch
+
+9. Subir la rama al repositorio:
+git push -u origin Diego
+
+========================================
+NOTAS IMPORTANTES:
+========================================
+
+- Si git push pide autenticación:
+  * Usa tu Personal Access Token de GitHub (NO tu contraseña)
+  * Obtén uno en: GitHub → Settings → Developer settings → Personal access tokens → Generate new token
+
+- Si dice "Permission denied":
+  * Verifica que tu compañero te haya dado permisos de colaborador en el repositorio
+
+- Si dice "remote origin already exists":
+  * No es un problema, puedes continuar
+
+- Para verificar tus remotes:
+  git remote -v
+
+- Para cambiar el remote (si es necesario):
+  git remote set-url origin https://github.com/gersss444/ConsultorioDental.git
+
