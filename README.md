@@ -1,6 +1,6 @@
 # Sistema REST API - Consultorio Dental
 
-API REST para gestión de consultorio dental. Se utiliza Postman para probar todos los endpoints.
+API REST para gestión de consultorio dental.
 
 ## 1. Instalar dependencias
 ```bash
@@ -9,7 +9,7 @@ npm install
 
 ## 2. Configurar Base de Datos
 - Crear base de datos MongoDB con nombre: `consultorio_dental`
-- Configurar la cadena de conexión en el archivo `.env`
+
 
 ## 3. Iniciar el servidor
 ```bash
@@ -20,28 +20,36 @@ o en modo desarrollo:
 npm run dev
 ```
 
-El servidor se iniciará en `http://localhost:3000` (o el puerto configurado en `.env`)
-
 ## Uso con Postman
 
 Una vez iniciado el servidor, puedes probar todos los endpoints con Postman:
 
 ### Endpoints disponibles:
+
+#### Autenticación
 - `GET /health` - Health check
 - `POST /api/auth/register` - Registrar nuevo usuario (obtiene token automáticamente)
 - `POST /api/auth/login` - Iniciar sesión y obtener token JWT
-- `GET /api/appointments` - Listar citas (requiere JWT)
+
+#### Appointments (Citas)
+- `GET /api/appointments` - Listar citas con paginación (requiere JWT)
 - `GET /api/appointments/:id` - Obtener cita por ID (requiere JWT)
+- `GET /api/appointments/date?date=YYYY-MM-DD` - Buscar citas por fecha (requiere JWT)
+- `GET /api/appointments/patient?patient_id=N` - Buscar citas por paciente (requiere JWT)
 - `POST /api/appointments` - Crear nueva cita (requiere JWT)
-- `PUT /api/appointments/:id` - Actualizar cita (requiere JWT)
+- `PUT /api/appointments/:id` - Actualizar cita completa (requiere JWT)
 - `PATCH /api/appointments/:id/status` - Actualizar estado de cita (requiere JWT)
 - `DELETE /api/appointments/:id` - Eliminar cita (requiere JWT)
 
-### Nota
-Todas las rutas de `/api/appointments` requieren autenticación JWT. Debes incluir el token en el header:
-```
-Authorization: Bearer <tu_token_jwt>
-```
+#### Dental Records (Registros Dentales)
+- `GET /api/dentalrecords` - Listar todos los registros dentales sin paginación (requiere JWT)
+- `GET /api/dentalrecords/:id` - Obtener registro dental por ID (requiere JWT)
+- `GET /api/dentalrecords/patient?patient_id=N` - Buscar registros por paciente (requiere JWT)
+- `POST /api/dentalrecords` - Crear nuevo registro dental (requiere JWT, valida que patient_id exista)
+- `PUT /api/dentalrecords/:id` - Actualizar registro dental completo (requiere JWT)
+- `PATCH /api/dentalrecords/:id` - Actualizar varios campos del registro (requiere JWT)
+- `DELETE /api/dentalrecords/:id` - Eliminar registro dental (requiere JWT)
+
 
 ## Primer uso
 
@@ -58,6 +66,41 @@ Authorization: Bearer <tu_token_jwt>
 2. El registro automáticamente te devuelve un token JWT que puedes usar para las demás peticiones.
 
 3. Para futuros accesos, usa `POST /api/auth/login` con tus credenciales.
+
+## Ejemplos de uso con Dental Records
+
+### Crear un registro dental
+```json
+POST /api/dentalrecords
+{
+    "patient_id": 1,
+    "description": "Limpieza dental profunda",
+    "diagnosis": "Gingivitis leve",
+    "treatment_plan": "Limpieza y aplicación de flúor",
+    "treatment_notes": "Paciente requiere seguimiento",
+    "treatment_cost": 500,
+    "payment_status": "pending",
+    "record_type": "general"
+}
+```
+
+**Nota importante:** El `patient_id` debe existir en la base de datos. Si intentas usar un `patient_id` que no existe, recibirás un error 400.
+
+### Actualizar varios campos (PATCH)
+```json
+PATCH /api/dentalrecords/:id
+{
+    "payment_status": "paid",
+    "treatment_cost": 600,
+    "description": "Descripción actualizada"
+}
+```
+
+### Nota sobre autenticación
+Para acceder a las rutas Debes incluir el token en el header:
+```
+Authorization: Bearer <tu_token_jwt>
+```
 
 
 
