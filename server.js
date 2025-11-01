@@ -8,6 +8,7 @@ const databaseConnection = require('./config/database');
 // Importar rutas
 const appointmentRoutes = require('./routes/appointment');
 const authRoutes = require('./routes/auth');
+const dentalRecordsRoutes = require('./routes/dentalRecordsRoutes');
 
 // Importar middleware de manejo de errores
 const errorHandler = require('./middlewares/errorHandler');
@@ -35,6 +36,9 @@ app.use('/api/auth', authRoutes);
 // Rutas de appointments (requieren JWT)
 app.use('/api/appointments', appointmentRoutes);
 
+// Rutas de dental records (requieren JWT)
+app.use('/api/dentalrecords', dentalRecordsRoutes);
+
 // Manejo de rutas no encontradas
 app.use((req, res) => {
     res.status(404).json({
@@ -42,6 +46,7 @@ app.use((req, res) => {
         message: `La ruta ${req.method} ${req.path} no existe`,
         availableRoutes: [
             'GET /health',
+            'POST /api/auth/register',
             'POST /api/auth/login',
             'GET /api/appointments',
             'GET /api/appointments/:id',
@@ -50,7 +55,14 @@ app.use((req, res) => {
             'POST /api/appointments',
             'PUT /api/appointments/:id',
             'PATCH /api/appointments/:id/status',
-            'DELETE /api/appointments/:id'
+            'DELETE /api/appointments/:id',
+            'GET /api/dentalrecords',
+            'GET /api/dentalrecords/:id',
+            'GET /api/dentalrecords/patient?patient_id=N',
+            'POST /api/dentalrecords',
+            'PUT /api/dentalrecords/:id',
+            'PATCH /api/dentalrecords/:id',
+            'DELETE /api/dentalrecords/:id'
         ]
     });
 });
@@ -78,8 +90,9 @@ async function startServer() {
             console.log(`Health check: http://localhost:${PORT}/health`);
             console.log(`Login: POST http://localhost:${PORT}/api/auth/login`);
             console.log(`Appointments: http://localhost:${PORT}/api/appointments`);
+            console.log(`Dental Records: http://localhost:${PORT}/api/dentalrecords`);
             console.log('='.repeat(60));
-            console.log('NOTA: Todas las rutas de appointments requieren autenticación JWT');
+            console.log('NOTA: Todas las rutas requieren autenticación JWT');
             console.log('='.repeat(60));
         });
     } catch (error) {

@@ -1,25 +1,63 @@
+# Sistema REST API - Consultorio Dental
 
-### 1. Instalar dependencias
+API REST para gestión de consultorio dental. Se utiliza Postman para probar todos los endpoints.
+
+## 1. Instalar dependencias
+```bash
 npm install
-### 2. Configurar Base de Datos
-- Crear base de datos MongoDB con nombre: consultorio_dental
-- Las colecciones se crean automáticamente al ejecutar npm test o npm start
-### 3. Crear datos de prueba
-npm test
+```
 
-Este comando ejecuta test-database.js y crea usuarios, pacientes, citas e inventario de prueba.
+## 2. Configurar Base de Datos
+- Crear base de datos MongoDB con nombre: `consultorio_dental`
+- Configurar la cadena de conexión en el archivo `.env`
 
-### 4. Ejecutar el sistema
+## 3. Iniciar el servidor
+```bash
 npm start
+```
+o en modo desarrollo:
+```bash
+npm run dev
+```
 
-## Credenciales 
-Email: dentista1760158620360@test.com
-Contraseña: contra123
+El servidor se iniciará en `http://localhost:3000` (o el puerto configurado en `.env`)
 
-## Comandos Disponibles
-npm start - Ejecutar sistema interactivo
-npm test - Crear datos de prueba
-npm run clean` - Limpiar base de datos
+## Uso con Postman
+
+Una vez iniciado el servidor, puedes probar todos los endpoints con Postman:
+
+### Endpoints disponibles:
+- `GET /health` - Health check
+- `POST /api/auth/register` - Registrar nuevo usuario (obtiene token automáticamente)
+- `POST /api/auth/login` - Iniciar sesión y obtener token JWT
+- `GET /api/appointments` - Listar citas (requiere JWT)
+- `GET /api/appointments/:id` - Obtener cita por ID (requiere JWT)
+- `POST /api/appointments` - Crear nueva cita (requiere JWT)
+- `PUT /api/appointments/:id` - Actualizar cita (requiere JWT)
+- `PATCH /api/appointments/:id/status` - Actualizar estado de cita (requiere JWT)
+- `DELETE /api/appointments/:id` - Eliminar cita (requiere JWT)
+
+### Nota
+Todas las rutas de `/api/appointments` requieren autenticación JWT. Debes incluir el token en el header:
+```
+Authorization: Bearer <tu_token_jwt>
+```
+
+## Primer uso
+
+1. **Registra tu primer usuario** con `POST /api/auth/register`:
+```json
+{
+    "email": "admin@consultorio.com",
+    "password": "tu_password_segura",
+    "name": "Administrador",
+    "role": "admin"
+}
+```
+
+2. El registro automáticamente te devuelve un token JWT que puedes usar para las demás peticiones.
+
+3. Para futuros accesos, usa `POST /api/auth/login` con tus credenciales.
 
 
 

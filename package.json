@@ -2,15 +2,10 @@
   "name": "consultorio-dental",
   "version": "1.0.0",
   "description": "Sistema de gestión para consultorio dental",
-  "main": "index.js",
+  "main": "server.js",
   "scripts": {
-    "start": "node index.js",
-    "server": "node server.js",
-    "clean": "node clean-database.js",
-    "test": "node test/test-database.js",
-    "test:clean": "node test/test-database.js clean",
-    "dev": "nodemon index.js",
-    "dev:server": "nodemon server.js"
+    "start": "node server.js",
+    "dev": "nodemon server.js"
   },
   "keywords": [
     "dental",
