@@ -102,6 +102,18 @@ Para acceder a las rutas Debes incluir el token en el header:
 Authorization: Bearer <tu_token_jwt>
 ```
 
+---
 
+## Módulo de Pacientes
 
+Se implementó la funcionalidad completa correspondiente al manejo de pacientes dentro del sistema REST API del Consultorio Dental.
 
+### Cambios realizados
+- Creación del controlador de pacientes con las operaciones CRUD
+- Definición de rutas específicas para la gestión de pacientes
+- Validaciones de datos en las solicitudes de creación y actualización
+- Manejo de errores y respuestas consistentes en las operaciones del módulo
+- Conexión con la base de datos para registrar, consultar, modificar y eliminar información de pacientes
+- Pruebas de los endpoints mediante Postman para verificar su correcto funcionamiento
+
+---
