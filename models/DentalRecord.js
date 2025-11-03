@@ -31,26 +31,28 @@ class DentalRecord {
     async create(recordData) {
         await this.init();
         const nextId = await this.getNextId();
+        
         const record = {
             id: nextId,
             patient_id: parseInt(recordData.patient_id),
             description: recordData.description,
+            diagnosis: recordData.diagnosis,
+            treatment_plan: recordData.treatment_plan,
             treatment_notes: recordData.treatment_notes || '',
-            diagnosis: recordData.diagnosis || '',
-            treatment_plan: recordData.treatment_plan || '',
             file_path: recordData.file_path || '',
             next_appointment: recordData.next_appointment ? new Date(recordData.next_appointment) : null,
-            treatment_cost: recordData.treatment_cost || 0,
+            treatment_cost: parseFloat(recordData.treatment_cost) || 0,
             payment_status: recordData.payment_status || 'pending',
-            created_at: new Date(),
-            created_by_info: recordData.created_by_info,
-            record_type: recordData.record_type || 'general'
+            record_type: recordData.record_type || 'general',
+            created_by_info: recordData.created_by_info || { id: 'SYSTEM', name: 'Sistema' },
+            created_at: new Date()
         };
+        
         const result = await this.collection.insertOne(record);
         return { ...record, _id: result.insertedId };
     }
 
-    // Buscar registro por ID
+    // Buscar registro dental por ID
     async findById(recordId) {
         await this.init();
         return await this.collection.findOne({ id: parseInt(recordId) });
@@ -72,27 +74,64 @@ class DentalRecord {
         }).sort({ created_at: -1 }).toArray();
     }
 
-    // Obtener todos los registros con paginación
-    async findAll(page = 1, limit = 10) {
+    // Obtener todos los registros (sin paginación)
+    async findAll() {
         await this.init();
-        const skip = (page - 1) * limit;
-        const [records, total] = await Promise.all([
-            this.collection.find({}).skip(skip).limit(limit).toArray(),
-            this.collection.countDocuments({})
-        ]);
-        return { records, total, page, limit };
+        const records = await this.collection.find({}).sort({ created_at: -1 }).toArray();
+        const total = records.length;
+        return { records, total };
     }
 
-    // Actualizar datos del registro
+    // Actualizar datos del registro dental
     async update(recordId, updateData) {
         await this.init();
+        
+        // Preparar datos de actualización
+        const updateFields = {};
+        
+        if (updateData.patient_id !== undefined) {
+            updateFields.patient_id = parseInt(updateData.patient_id);
+        }
+        if (updateData.description !== undefined) {
+            updateFields.description = updateData.description;
+        }
+        if (updateData.diagnosis !== undefined) {
+            updateFields.diagnosis = updateData.diagnosis;
+        }
+        if (updateData.treatment_plan !== undefined) {
+            updateFields.treatment_plan = updateData.treatment_plan;
+        }
+        if (updateData.treatment_notes !== undefined) {
+            updateFields.treatment_notes = updateData.treatment_notes;
+        }
+        if (updateData.file_path !== undefined) {
+            updateFields.file_path = updateData.file_path;
+        }
+        if (updateData.next_appointment !== undefined) {
+            updateFields.next_appointment = updateData.next_appointment ? new Date(updateData.next_appointment) : null;
+        }
+        if (updateData.treatment_cost !== undefined) {
+            updateFields.treatment_cost = parseFloat(updateData.treatment_cost);
+        }
+        if (updateData.payment_status !== undefined) {
+            updateFields.payment_status = updateData.payment_status;
+        }
+        if (updateData.record_type !== undefined) {
+            updateFields.record_type = updateData.record_type;
+        }
+        if (updateData.created_by_info !== undefined) {
+            updateFields.created_by_info = updateData.created_by_info;
+        }
+        
+        updateFields.updated_at = new Date();
+        
         return await this.collection.updateOne(
             { id: parseInt(recordId) },
-            { $set: { ...updateData, updated_at: new Date() } }
+            { $set: updateFields }
         );
     }
 
-    // Actualizar estado de pago
+    // Actualizar estado de pago del registro dental
     async updatePaymentStatus(recordId, paymentStatus) {
         await this.init();
         return await this.collection.updateOne(
@@ -101,7 +140,7 @@ class DentalRecord {
         );
     }
 
-    // Eliminar registro permanentemente
+    // Eliminar registro dental permanentemente
     async delete(recordId) {
         await this.init();
         return await this.collection.deleteOne({ id: parseInt(recordId) });

@@ -9,6 +9,8 @@ const databaseConnection = require('./config/database');
 const appointmentRoutes = require('./routes/appointment');
 const authRoutes = require('./routes/auth');
 const userRoutes = require('./routes/user');
+const dentalRecordsRoutes = require('./routes/dentalRecordsRoutes');
+const patientRoutes = require('./routes/patient');
 
 // Importar middleware de manejo de errores
 const errorHandler = require('./middlewares/errorHandler');
@@ -39,6 +41,12 @@ app.use('/api/appointments', appointmentRoutes);
 // Rutas de users (requieren JWT)
 app.use('/api/users', userRoutes);
 
+// Rutas de dental records (requieren JWT)
+app.use('/api/dentalrecords', dentalRecordsRoutes);
+
+// Rutas de patients (requieren JWT)
+app.use('/api/patients', patientRoutes);
+
 // Manejo de rutas no encontradas
 app.use((req, res) => {
     res.status(404).json({
@@ -46,6 +54,7 @@ app.use((req, res) => {
         message: `La ruta ${req.method} ${req.path} no existe`,
         availableRoutes: [
             'GET /health',
+            'POST /api/auth/register',
             'POST /api/auth/login',
             'GET /api/appointments',
             'GET /api/appointments/:id',
@@ -62,7 +71,22 @@ app.use((req, res) => {
             'GET /api/users/search?name=Juan',
             'POST /api/users',
             'PUT /api/users/:id',
-            'DELETE /api/users/:id'
+            'DELETE /api/users/:id',
+            'GET /api/dentalrecords',
+            'GET /api/dentalrecords/:id',
+            'GET /api/dentalrecords/patient?patient_id=N',
+            'POST /api/dentalrecords',
+            'PUT /api/dentalrecords/:id',
+            'PATCH /api/dentalrecords/:id',
+            'DELETE /api/dentalrecords/:id',
+            'GET /api/patients',
+            'GET /api/patients/:id',
+            'GET /api/patients/search?q=nombre',
+            'GET /api/patients/email?email=xxx@xxx.com',
+            'POST /api/patients',
+            'PUT /api/patients/:id',
+            'DELETE /api/patients/:id',
+            'POST /api/patients/:id/orthodontics/adjustments'
         ]
     });
 });
@@ -91,8 +115,10 @@ async function startServer() {
             console.log(`Login: POST http://localhost:${PORT}/api/auth/login`);
             console.log(`Appointments: http://localhost:${PORT}/api/appointments`);
             console.log(`Users: http://localhost:${PORT}/api/users`);
+            console.log(`Dental Records: http://localhost:${PORT}/api/dentalrecords`);
+            console.log(`Patients: http://localhost:${PORT}/api/patients`);
             console.log('='.repeat(60));
-            console.log('NOTA: Todas las rutas de appointments y users requieren autenticación JWT');
+            console.log('NOTA: Todas las rutas requieren autenticación JWT');
             console.log('='.repeat(60));
         });
     } catch (error) {
