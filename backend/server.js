@@ -1,5 +1,7 @@
 const express = require('express');
 const cors = require('cors');
+const path = require('path');
+const morgan = require('morgan'); // Importar morgan para logging HTTP
 require('dotenv').config();
 
 // Importar conexión a base de datos
@@ -9,6 +11,8 @@ const databaseConnection = require('./config/database');
 const appointmentRoutes = require('./routes/appointment');
 const authRoutes = require('./routes/auth');
 const dentalRecordsRoutes = require('./routes/dental-recordsRoutes');
+const inventoryRoutes = require('./routes/inventory');
+const patientRoutes = require('./routes/patient');
 
 // Importar middleware de manejo de errores
 const errorHandler = require('./middlewares/errorHandler');
@@ -20,6 +24,10 @@ const app = express();
 app.use(cors()); // Habilitar CORS
 app.use(express.json()); // Parsear JSON en el body
 app.use(express.urlencoded({ extended: true })); // Parsear URL-encoded
+app.use(morgan('dev')); // Añadir logging HTTP con morgan
+
+// // Servir archivos estáticos del frontend (comentado, ahora se servirá por separado)
+// app.use(express.static(path.join(__dirname, '..', 'frontend', 'public')));
 
 // Health check endpoint (no requiere autenticación)
 app.get('/health', (req, res) => {
@@ -38,6 +46,12 @@ app.use('/api/appointments', appointmentRoutes);
 
 // Rutas de dental records (requieren JWT)
 app.use('/api/dental-records', dentalRecordsRoutes);
+
+// Rutas de inventory (requieren JWT)
+app.use('/api/inventory', inventoryRoutes);
+
+// Rutas de patients (requieren JWT)
+app.use('/api/patients', patientRoutes);
 
 // Manejo de rutas no encontradas
 app.use((req, res) => {
@@ -62,7 +76,15 @@ app.use((req, res) => {
             'POST /api/dental-records',
             'PUT /api/dental-records/:id',
             'PATCH /api/dental-records/:id',
-            'DELETE /api/dental-records/:id'
+            'DELETE /api/dental-records/:id',
+            'GET /api/inventory',
+            'GET /api/inventory/:id',
+            'GET /api/inventory/category?category=X',
+            'GET /api/inventory/search?name=X',
+            'POST /api/inventory',
+            'PUT /api/inventory/:id',
+            'PATCH /api/inventory/:id/stock',
+            'DELETE /api/inventory/:id'
         ]
     });
 });
@@ -91,8 +113,10 @@ async function startServer() {
             console.log(`Login: POST http://localhost:${PORT}/api/auth/login`);
             console.log(`Appointments: http://localhost:${PORT}/api/appointments`);
             console.log(`Dental Records: http://localhost:${PORT}/api/dental-records`);
+            console.log(`Inventory: http://localhost:${PORT}/api/inventory`);
+            console.log(`Patients: http://localhost:${PORT}/api/patients`);
             console.log('='.repeat(60));
-            console.log('NOTA: Todas las rutas requieren autenticación JWT');
+            console.log('NOTA: Todas las rutas de API requieren autenticación JWT, excepto /api/auth/register y /api/auth/login');
             console.log('='.repeat(60));
         });
     } catch (error) {
