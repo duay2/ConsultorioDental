@@ -8,7 +8,9 @@ const databaseConnection = require('./config/database');
 // Importar rutas
 const appointmentRoutes = require('./routes/appointment');
 const authRoutes = require('./routes/auth');
+const userRoutes = require('./routes/user');
 const dentalRecordsRoutes = require('./routes/dentalRecordsRoutes');
+const patientRoutes = require('./routes/patient');
 
 // Importar middleware de manejo de errores
 const errorHandler = require('./middlewares/errorHandler');
@@ -36,8 +38,14 @@ app.use('/api/auth', authRoutes);
 // Rutas de appointments (requieren JWT)
 app.use('/api/appointments', appointmentRoutes);
 
+// Rutas de users (requieren JWT)
+app.use('/api/users', userRoutes);
+
 // Rutas de dental records (requieren JWT)
 app.use('/api/dental-records', dentalRecordsRoutes);
+
+// Rutas de patients (requieren JWT)
+app.use('/api/patients', patientRoutes);
 
 // Manejo de rutas no encontradas
 app.use((req, res) => {
@@ -56,13 +64,29 @@ app.use((req, res) => {
             'PUT /api/appointments/:id',
             'PATCH /api/appointments/:id/status',
             'DELETE /api/appointments/:id',
-            'GET /api/dental-records',
-            'GET /api/dental-records/:id',
-            'GET /api/dental-records/patient?patient_id=N',
-            'POST /api/dental-records',
-            'PUT /api/dental-records/:id',
-            'PATCH /api/dental-records/:id',
-            'DELETE /api/dental-records/:id'
+            'GET /api/users',
+            'GET /api/users/:id',
+            'GET /api/users/email?email=xxx@xxx.com',
+            'GET /api/users/role?role=doctor',
+            'GET /api/users/search?name=Juan',
+            'POST /api/users',
+            'PUT /api/users/:id',
+            'DELETE /api/users/:id',
+            'GET /api/dentalrecords',
+            'GET /api/dentalrecords/:id',
+            'GET /api/dentalrecords/patient?patient_id=N',
+            'POST /api/dentalrecords',
+            'PUT /api/dentalrecords/:id',
+            'PATCH /api/dentalrecords/:id',
+            'DELETE /api/dentalrecords/:id',
+            'GET /api/patients',
+            'GET /api/patients/:id',
+            'GET /api/patients/search?q=nombre',
+            'GET /api/patients/email?email=xxx@xxx.com',
+            'POST /api/patients',
+            'PUT /api/patients/:id',
+            'DELETE /api/patients/:id',
+            'POST /api/patients/:id/orthodontics/adjustments'
         ]
     });
 });
@@ -90,7 +114,9 @@ async function startServer() {
             console.log(`Health check: http://localhost:${PORT}/health`);
             console.log(`Login: POST http://localhost:${PORT}/api/auth/login`);
             console.log(`Appointments: http://localhost:${PORT}/api/appointments`);
-            console.log(`Dental Records: http://localhost:${PORT}/api/dental-records`);
+            console.log(`Users: http://localhost:${PORT}/api/users`);
+            console.log(`Dental Records: http://localhost:${PORT}/api/dentalrecords`);
+            console.log(`Patients: http://localhost:${PORT}/api/patients`);
             console.log('='.repeat(60));
             console.log('NOTA: Todas las rutas requieren autenticación JWT');
             console.log('='.repeat(60));
