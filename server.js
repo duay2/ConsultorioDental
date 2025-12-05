@@ -37,7 +37,7 @@ app.use('/api/auth', authRoutes);
 app.use('/api/appointments', appointmentRoutes);
 
 // Rutas de dental records (requieren JWT)
-app.use('/api/dentalrecords', dentalRecordsRoutes);
+app.use('/api/dental-records', dentalRecordsRoutes);
 
 // Manejo de rutas no encontradas
 app.use((req, res) => {
@@ -56,13 +56,13 @@ app.use((req, res) => {
             'PUT /api/appointments/:id',
             'PATCH /api/appointments/:id/status',
             'DELETE /api/appointments/:id',
-            'GET /api/dentalrecords',
-            'GET /api/dentalrecords/:id',
-            'GET /api/dentalrecords/patient?patient_id=N',
-            'POST /api/dentalrecords',
-            'PUT /api/dentalrecords/:id',
-            'PATCH /api/dentalrecords/:id',
-            'DELETE /api/dentalrecords/:id'
+            'GET /api/dental-records',
+            'GET /api/dental-records/:id',
+            'GET /api/dental-records/patient?patient_id=N',
+            'POST /api/dental-records',
+            'PUT /api/dental-records/:id',
+            'PATCH /api/dental-records/:id',
+            'DELETE /api/dental-records/:id'
         ]
     });
 });
@@ -90,7 +90,7 @@ async function startServer() {
             console.log(`Health check: http://localhost:${PORT}/health`);
             console.log(`Login: POST http://localhost:${PORT}/api/auth/login`);
             console.log(`Appointments: http://localhost:${PORT}/api/appointments`);
-            console.log(`Dental Records: http://localhost:${PORT}/api/dentalrecords`);
+            console.log(`Dental Records: http://localhost:${PORT}/api/dental-records`);
             console.log('='.repeat(60));
             console.log('NOTA: Todas las rutas requieren autenticación JWT');
             console.log('='.repeat(60));

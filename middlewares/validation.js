@@ -377,6 +377,112 @@ const validateOrthodonticAdjustment = [
   handleValidationErrors
 ];
 
+/**
+ * Validaciones para crear un item de inventario (POST)
+ */
+const validateCreateInventory = [
+    body('name')
+        .notEmpty().withMessage('El nombre del item es requerido')
+        .isString().withMessage('El nombre debe ser una cadena de texto')
+        .trim(),
+    body('category')
+        .notEmpty().withMessage('La categoría del item es requerida')
+        .isString().withMessage('La categoría debe ser una cadena de texto')
+        .trim(),
+    body('description')
+        .optional()
+        .isString().withMessage('La descripción debe ser una cadena de texto')
+        .trim(),
+    body('current_stock')
+        .isInt({ min: 0 }).withMessage('El stock actual debe ser un número entero no negativo'),
+    body('min_stock')
+        .isInt({ min: 0 }).withMessage('El stock mínimo debe ser un número entero no negativo'),
+    body('cost_per_unit')
+        .isFloat({ min: 0 }).withMessage('El costo por unidad debe ser un número positivo'),
+    body('supplier')
+        .optional()
+        .isString().withMessage('El proveedor debe ser una cadena de texto')
+        .trim(),
+    handleValidationErrors
+];
+
+/**
+ * Validaciones para actualizar un item de inventario (PUT)
+ */
+const validateUpdateInventory = [
+    param('id')
+        .isInt({ min: 1 }).withMessage('El ID debe ser un número entero positivo'),
+    body('name')
+        .optional()
+        .isString().withMessage('El nombre debe ser una cadena de texto')
+        .trim(),
+    body('category')
+        .optional()
+        .isString().withMessage('La categoría debe ser una cadena de texto')
+        .trim(),
+    body('description')
+        .optional()
+        .isString().withMessage('La descripción debe ser una cadena de texto')
+        .trim(),
+    body('min_stock')
+        .optional()
+        .isInt({ min: 0 }).withMessage('El stock mínimo debe ser un número entero no negativo'),
+    body('cost_per_unit')
+        .optional()
+        .isFloat({ min: 0 }).withMessage('El costo por unidad debe ser un número positivo'),
+    body('supplier')
+        .optional()
+        .isString().withMessage('El proveedor debe ser una cadena de texto')
+        .trim(),
+    handleValidationErrors
+];
+
+/**
+ * Validaciones para obtener/eliminar/ajustar stock de un item de inventario por ID (GET, DELETE, PATCH)
+ */
+const validateInventoryId = [
+    param('id')
+        .isInt({ min: 1 }).withMessage('El ID del item de inventario debe ser un número entero positivo'),
+    handleValidationErrors
+];
+
+/**
+ * Validaciones para ajustar el stock de un item (PATCH)
+ */
+const validateAdjustStock = [
+    param('id')
+        .isInt({ min: 1 }).withMessage('El ID del item de inventario debe ser un número entero positivo'),
+    body('quantity')
+        .isInt().withMessage('La cantidad debe ser un número entero'),
+    body('reason')
+        .notEmpty().withMessage('La razón del ajuste es requerida')
+        .isString().withMessage('La razón debe ser una cadena de texto')
+        .trim(),
+    handleValidationErrors
+];
+
+/**
+ * Validaciones para buscar items por categoría (GET)
+ */
+const validateCategoryQuery = [
+    query('category')
+        .notEmpty().withMessage('La categoría es requerida')
+        .isString().withMessage('La categoría debe ser una cadena de texto')
+        .trim(),
+    handleValidationErrors
+];
+
+/**
+ * Validaciones para buscar items por nombre (GET)
+ */
+const validateInventorySearchQuery = [
+    query('name')
+        .notEmpty().withMessage('El término de búsqueda por nombre es requerido')
+        .isString().withMessage('El término de búsqueda debe ser una cadena de texto')
+        .trim(),
+    handleValidationErrors
+];
+
 module.exports = {
     validateCreateAppointment,
     validateUpdateAppointment,
@@ -395,6 +501,12 @@ module.exports = {
     validateUpdatePatient,
     validateSearchQuery,
     validateOrthodonticAdjustment,
-    handleValidationErrors
+    handleValidationErrors,
+    validateCreateInventory,
+    validateUpdateInventory,
+    validateInventoryId,
+    validateAdjustStock,
+    validateCategoryQuery,
+    validateInventorySearchQuery
 };
 

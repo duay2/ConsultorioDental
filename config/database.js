@@ -98,9 +98,9 @@ class DatabaseConnection {
             await db.collection('users').createIndex({ email: 1 }, { unique: true });
             await db.collection('users').createIndex({ role: 1 });
             
-            // Índices para dentalrecords
-            await db.collection('dentalrecords').createIndex({ patient_id: 1 });
-            await db.collection('dentalrecords').createIndex({ created_at: -1 });
+            // Índices para dental-records
+            await db.collection('dental-records').createIndex({ patient_id: 1 });
+            await db.collection('dental-records').createIndex({ created_at: -1 });
             
             console.log('Índices creados exitosamente');
         } catch (error) {
