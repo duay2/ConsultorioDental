@@ -42,7 +42,7 @@ app.use('/api/appointments', appointmentRoutes);
 app.use('/api/users', userRoutes);
 
 // Rutas de dental records (requieren JWT)
-app.use('/api/dentalrecords', dentalRecordsRoutes);
+app.use('/api/dental-records', dentalRecordsRoutes);
 
 // Rutas de patients (requieren JWT)
 app.use('/api/patients', patientRoutes);

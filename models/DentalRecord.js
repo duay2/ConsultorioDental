@@ -10,7 +10,7 @@ class DentalRecord {
     }
 
     async init() {
-        this.collection = databaseConnection.getCollection('dentalrecords');
+        this.collection = databaseConnection.getCollection('dental-records');
     }
 
     // Obtener el siguiente ID numérico

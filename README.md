@@ -42,13 +42,13 @@ Una vez iniciado el servidor, puedes probar todos los endpoints con Postman:
 - `DELETE /api/appointments/:id` - Eliminar cita (requiere JWT)
 
 #### Dental Records (Registros Dentales)
-- `GET /api/dentalrecords` - Listar todos los registros dentales sin paginación (requiere JWT)
-- `GET /api/dentalrecords/:id` - Obtener registro dental por ID (requiere JWT)
-- `GET /api/dentalrecords/patient?patient_id=N` - Buscar registros por paciente (requiere JWT)
-- `POST /api/dentalrecords` - Crear nuevo registro dental (requiere JWT, valida que patient_id exista)
-- `PUT /api/dentalrecords/:id` - Actualizar registro dental completo (requiere JWT)
-- `PATCH /api/dentalrecords/:id` - Actualizar varios campos del registro (requiere JWT)
-- `DELETE /api/dentalrecords/:id` - Eliminar registro dental (requiere JWT)
+- `GET /api/dental-records` - Listar todos los registros dentales sin paginación (requiere JWT)
+- `GET /api/dental-records/:id` - Obtener registro dental por ID (requiere JWT)
+- `GET /api/dental-records/patient?patient_id=N` - Buscar registros por paciente (requiere JWT)
+- `POST /api/dental-records` - Crear nuevo registro dental (requiere JWT, valida que patient_id exista)
+- `PUT /api/dental-records/:id` - Actualizar registro dental completo (requiere JWT)
+- `PATCH /api/dental-records/:id` - Actualizar varios campos del registro (requiere JWT)
+- `DELETE /api/dental-records/:id` - Eliminar registro dental (requiere JWT)
 
 
 ## Primer uso
@@ -71,7 +71,7 @@ Una vez iniciado el servidor, puedes probar todos los endpoints con Postman:
 
 ### Crear un registro dental
 ```json
-POST /api/dentalrecords
+POST /api/dental-records
 {
     "patient_id": 1,
     "description": "Limpieza dental profunda",
@@ -88,7 +88,7 @@ POST /api/dentalrecords
 
 ### Actualizar varios campos (PATCH)
 ```json
-PATCH /api/dentalrecords/:id
+PATCH /api/dental-records/:id
 {
     "payment_status": "paid",
     "treatment_cost": 600,

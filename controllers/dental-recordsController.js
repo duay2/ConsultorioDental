@@ -4,7 +4,7 @@ const databaseConnection = require('../config/database');
 
 /**
  * Obtener todos los registros dentales (sin paginación)
- * GET /api/dentalrecords
+ * GET /api/dental-records
  */
 const getAllDentalRecords = async (req, res, next) => {
     try {
@@ -28,7 +28,7 @@ const getAllDentalRecords = async (req, res, next) => {
 
 /**
  * Obtener un registro dental por ID
- * GET /api/dentalrecords/:id
+ * GET /api/dental-records/:id
  */
 const getDentalRecordById = async (req, res, next) => {
     try {
@@ -59,7 +59,7 @@ const getDentalRecordById = async (req, res, next) => {
 
 /**
  * Crear un nuevo registro dental
- * POST /api/dentalrecords
+ * POST /api/dental-records
  */
 const createDentalRecord = async (req, res, next) => {
     try {
@@ -95,7 +95,7 @@ const createDentalRecord = async (req, res, next) => {
 
 /**
  * Actualizar un registro dental
- * PUT /api/dentalrecords/:id
+ * PUT /api/dental-records/:id
  */
 const updateDentalRecord = async (req, res, next) => {
     try {
@@ -153,7 +153,7 @@ const updateDentalRecord = async (req, res, next) => {
 
 /**
  * Eliminar un registro dental
- * DELETE /api/dentalrecords/:id
+ * DELETE /api/dental-records/:id
  */
 const deleteDentalRecord = async (req, res, next) => {
     try {
@@ -195,7 +195,7 @@ const deleteDentalRecord = async (req, res, next) => {
 
 /**
  * Obtener registros dentales por paciente
- * GET /api/dentalrecords/patient?patient_id=1
+ * GET /api/dental-records/patient?patient_id=1
  */
 const getDentalRecordsByPatient = async (req, res, next) => {
     try {
@@ -221,7 +221,7 @@ const getDentalRecordsByPatient = async (req, res, next) => {
 
 /**
  * Actualizar el estado de pago de un registro dental
- * PATCH /api/dentalrecords/:id/payment-status
+ * PATCH /api/dental-records/:id/payment-status
  */
 const updatePaymentStatus = async (req, res, next) => {
     try {
