@@ -4,6 +4,7 @@
  */
 
 // Importar todos los componentes
+import './components/confirm-dialog.js';
 import './components/navbar.js';
 import './components/login-view.js';
 import './components/dashboard-view.js';
@@ -15,6 +16,10 @@ import './components/inventory-table.js';
 import './components/inventory-row.js';
 import './components/table-pagination.js';
 import './components/inventory-modal.js';
+import './components/patients-view.js';
+import './components/patients-modal.js';
+import './components/patients-table.js';
+import './components/toast-notification.js';
 import authService from './services/auth-service.js';
 
 // Variable para evitar múltiples inicializaciones
@@ -158,6 +163,8 @@ function showDashboard(container) {
     }, 10);
 }
 
+
+
 /**
  * Configura los event listeners globales
  */
@@ -173,6 +180,8 @@ function setupEventListeners() {
                 appRoot.innerHTML = '<inventory-view></inventory-view>';
                 break;
             case 'pacientes':
+                appRoot.innerHTML = '<patients-view></patients-view>';
+                break;
             case 'citas':
             case 'registros':
                 // Por ahora volver al dashboard
