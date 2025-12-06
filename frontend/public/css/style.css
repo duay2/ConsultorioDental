@@ -1,3 +1,18 @@
-/*Estilos globales y responsive*/
-/*Este archivo contendrá los estilos base y variables CSS para el frontend*/
-/*los estilos específicos de cada componente estarán en el Shadow DOM de cada Web Component*/
+/* Estilos globales y reset */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
+        'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue',
+        sans-serif;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    background: #f5f5f5;
+    color: #1a1a1a;
+}
+
+/* Los estilos específicos de cada componente están en el Shadow DOM */
