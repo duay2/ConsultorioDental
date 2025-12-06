@@ -184,16 +184,31 @@ function showAgenda(container) {
 }
 
 /**
+ * Muestra la vista de inventario
+ */
+function showInventory(container) {
+    const appRoot = document.getElementById('app-root') || container;
+    appRoot.innerHTML = '<inventory-view></inventory-view>';
+    
+    // Actualizar navbar para marcar "Inventario" como activo
+    const navbar = document.querySelector('app-navbar');
+    if (navbar && navbar.shadowRoot) {
+        const inventarioLink = navbar.shadowRoot.querySelector('[data-section="inventario"]');
+        const allLinks = navbar.shadowRoot.querySelectorAll('.nav-link');
+        allLinks.forEach(link => link.classList.remove('active'));
+        if (inventarioLink) {
+            inventarioLink.classList.add('active');
+        }
+    }
+}
+
+/**
  * Configura los event listeners globales
  */
 function setupEventListeners() {
     // Usar delegación de eventos para manejar navbars que se crean dinámicamente
     document.body.addEventListener('navigate', (e) => {
-<<<<<<< HEAD
-        console.log('Navegar a:', e.detail.section);
-=======
         const section = e.detail?.section;
->>>>>>> 6b457dca72e62d59ab7cdf7c3c2db8c5816f866a
         const appRoot = document.getElementById('app-root') || document.body;
         
         console.log('Navegar a:', section);
@@ -202,9 +217,11 @@ function setupEventListeners() {
             case 'citas':
                 showAgenda(appRoot);
                 break;
+            case 'inventario':
+                showInventory(appRoot);
+                break;
             case 'pacientes':
             case 'registros':
-            case 'inventario':
                 // Por ahora mostrar dashboard, luego se pueden crear vistas específicas
                 showDashboard(appRoot);
                 break;

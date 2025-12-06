@@ -5,7 +5,7 @@
   "main": "index.js",
   "scripts": {
     "backend": "cd backend && npm run dev",
-    "frontend": "cd frontend/public && serve -l 5001",
+    "frontend": "cd frontend/public && serve -l 5000",
     "start": "concurrently \"npm run backend\" \"npm run frontend\""
   },
   "keywords": [],
