@@ -101,4 +101,3 @@ class AuthService {
 
 // Exportar instancia singleton
 export default new AuthService();
-

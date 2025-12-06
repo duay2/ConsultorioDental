@@ -149,6 +149,8 @@ class AppNavbar extends HTMLElement {
                 .user-details {
                     display: flex;
                     flex-direction: column;
+                    gap: 0;
+                    line-height: 1.2;
                 }
 
                 .user-name {
@@ -217,6 +219,7 @@ class AppNavbar extends HTMLElement {
             </nav>
         `;
 
+        this.shadowRoot.innerHTML = '';
         this.shadowRoot.appendChild(template.content.cloneNode(true));
 
         // Event listeners
