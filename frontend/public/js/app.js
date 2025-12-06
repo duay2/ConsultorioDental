@@ -15,6 +15,12 @@ import './components/inventory-table.js';
 import './components/inventory-row.js';
 import './components/table-pagination.js';
 import './components/inventory-modal.js';
+import './components/daily-agenda-view.js';
+import './components/agenda-row.js';
+import './components/time-slot.js';
+import './components/appointment-card.js';
+import './components/new-appointment-modal.js';
+import './components/edit-appointment-modal.js';
 import authService from './services/auth-service.js';
 
 // Variable para evitar múltiples inicializaciones
@@ -159,23 +165,47 @@ function showDashboard(container) {
 }
 
 /**
+ * Muestra la vista de agenda diaria
+ */
+function showAgenda(container) {
+    const appRoot = document.getElementById('app-root') || container;
+    appRoot.innerHTML = '<daily-agenda-view></daily-agenda-view>';
+    
+    // Actualizar navbar para marcar "Citas" como activo
+    const navbar = document.querySelector('app-navbar');
+    if (navbar && navbar.shadowRoot) {
+        const citasLink = navbar.shadowRoot.querySelector('[data-section="citas"]');
+        const allLinks = navbar.shadowRoot.querySelectorAll('.nav-link');
+        allLinks.forEach(link => link.classList.remove('active'));
+        if (citasLink) {
+            citasLink.classList.add('active');
+        }
+    }
+}
+
+/**
  * Configura los event listeners globales
  */
 function setupEventListeners() {
     // Usar delegación de eventos para manejar navbars que se crean dinámicamente
     document.body.addEventListener('navigate', (e) => {
+<<<<<<< HEAD
         console.log('Navegar a:', e.detail.section);
+=======
+        const section = e.detail?.section;
+>>>>>>> 6b457dca72e62d59ab7cdf7c3c2db8c5816f866a
         const appRoot = document.getElementById('app-root') || document.body;
         
-        // Enrutamiento básico
-        switch (e.detail.section) {
-            case 'inventario':
-                appRoot.innerHTML = '<inventory-view></inventory-view>';
+        console.log('Navegar a:', section);
+        
+        switch (section) {
+            case 'citas':
+                showAgenda(appRoot);
                 break;
             case 'pacientes':
-            case 'citas':
             case 'registros':
-                // Por ahora volver al dashboard
+            case 'inventario':
+                // Por ahora mostrar dashboard, luego se pueden crear vistas específicas
                 showDashboard(appRoot);
                 break;
             default:

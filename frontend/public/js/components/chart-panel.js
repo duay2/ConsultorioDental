@@ -8,16 +8,20 @@ class ChartPanel extends HTMLElement {
         super();
         this.attachShadow({ mode: 'open' });
         this.chart = null;
+<<<<<<< HEAD
         this.statusData = null;
     }
 
     static get observedAttributes() {
         return ['status-data'];
+=======
+>>>>>>> 6b457dca72e62d59ab7cdf7c3c2db8c5816f866a
     }
 
     connectedCallback() {
         this.loadChartLibrary().then(() => {
             this.render();
+<<<<<<< HEAD
             // Esperar a que el DOM esté listo y Chart.js esté cargado
             setTimeout(() => {
                 // Crear gráfico inicial con datos por defecto
@@ -171,6 +175,7 @@ class ChartPanel extends HTMLElement {
 
         this.shadowRoot.innerHTML = '';
         this.shadowRoot.appendChild(template.content.cloneNode(true));
+<<<<<<< HEAD
     }
 
     createChart(data = null) {
@@ -203,12 +208,33 @@ class ChartPanel extends HTMLElement {
             labels: ['Programadas', 'Completadas'],
             datasets: [{
                 data: [scheduledCount, completedCount],
+=======
+
+        // Crear gráfico después de que el DOM esté listo
+        setTimeout(() => {
+            this.createChart();
+        }, 100);
+    }
+
+    createChart() {
+        const canvas = this.shadowRoot.querySelector('#appointmentChart');
+        if (!canvas || !window.Chart) return;
+
+        const ctx = canvas.getContext('2d');
+
+        // Datos basados en la citas programadas y confirmadas
+        const data = {
+            labels: ['Programadas', 'Confirmadas'],
+            datasets: [{
+                data: [3, 1], 
+>>>>>>> 6b457dca72e62d59ab7cdf7c3c2db8c5816f866a
                 backgroundColor: ['#4A90E2', '#4CAF50'],
                 borderWidth: 0,
                 cutout: '60%'
             }]
         };
 
+<<<<<<< HEAD
         console.log('Datos del gráfico:', chartData);
 
         // Si ya existe un gráfico, destruirlo primero
@@ -265,6 +291,28 @@ class ChartPanel extends HTMLElement {
 
         // Actualizar sin animación
         this.chart.update('none');
+=======
+        this.chart = new Chart(ctx, {
+            type: 'doughnut',
+            data: data,
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                animation: {
+                    animateRotate: false,
+                    animateScale: false
+                },
+                plugins: {
+                    legend: {
+                        display: false
+                    },
+                    tooltip: {
+                        enabled: true
+                    }
+                }
+            }
+        });
+>>>>>>> 6b457dca72e62d59ab7cdf7c3c2db8c5816f866a
     }
 }
 

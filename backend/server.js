@@ -11,11 +11,9 @@ const databaseConnection = require('./config/database');
 const appointmentRoutes = require('./routes/appointment');
 const authRoutes = require('./routes/auth');
 const dentalRecordsRoutes = require('./routes/dental-recordsRoutes');
-<<<<<<<< HEAD:backend/server.js
 const inventoryRoutes = require('./routes/inventory');
 const patientRoutes = require('./routes/patient');
-========
->>>>>>>> main:server.js
+const userRoutes = require('./routes/user');
 
 // Importar middleware de manejo de errores
 const errorHandler = require('./middlewares/errorHandler');
@@ -56,6 +54,9 @@ app.use('/api/inventory', inventoryRoutes);
 // Rutas de patients (requieren JWT)
 app.use('/api/patients', patientRoutes);
 
+// Rutas de users (requieren JWT)
+app.use('/api/users', userRoutes);
+
 // Manejo de rutas no encontradas
 app.use((req, res) => {
     res.status(404).json({
@@ -87,7 +88,22 @@ app.use((req, res) => {
             'POST /api/inventory',
             'PUT /api/inventory/:id',
             'PATCH /api/inventory/:id/stock',
-            'DELETE /api/inventory/:id'
+            'DELETE /api/inventory/:id',
+            'GET /api/users',
+            'GET /api/users/:id',
+            'GET /api/users/email?email=xxx@xxx.com',
+            'GET /api/users/role?role=doctor',
+            'GET /api/users/search?name=Juan',
+            'POST /api/users',
+            'PUT /api/users/:id',
+            'DELETE /api/users/:id',
+            'GET /api/patients',
+            'GET /api/patients/:id',
+            'GET /api/patients/search?q=nombre',
+            'GET /api/patients/email?email=xxx@xxx.com',
+            'POST /api/patients',
+            'PUT /api/patients/:id',
+            'DELETE /api/patients/:id'
         ]
     });
 });
@@ -118,6 +134,7 @@ async function startServer() {
             console.log(`Dental Records: http://localhost:${PORT}/api/dental-records`);
             console.log(`Inventory: http://localhost:${PORT}/api/inventory`);
             console.log(`Patients: http://localhost:${PORT}/api/patients`);
+            console.log(`Users: http://localhost:${PORT}/api/users`);
             console.log('='.repeat(60));
             console.log('NOTA: Todas las rutas de API requieren autenticación JWT, excepto /api/auth/register y /api/auth/login');
             console.log('='.repeat(60));

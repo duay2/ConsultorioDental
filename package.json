@@ -5,13 +5,14 @@
   "main": "index.js",
   "scripts": {
     "backend": "cd backend && npm run dev",
-    "frontend": "cd frontend/public && serve -l 5000",
+    "frontend": "cd frontend/public && serve -l 5001",
     "start": "concurrently \"npm run backend\" \"npm run frontend\""
   },
   "keywords": [],
   "author": "",
   "license": "ISC",
   "devDependencies": {
-    "concurrently": "^8.2.2"
+    "concurrently": "^8.2.2",
+    "serve": "^14.2.5"
   }
 }
