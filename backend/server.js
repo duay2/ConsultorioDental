@@ -11,8 +11,11 @@ const databaseConnection = require('./config/database');
 const appointmentRoutes = require('./routes/appointment');
 const authRoutes = require('./routes/auth');
 const dentalRecordsRoutes = require('./routes/dental-recordsRoutes');
+<<<<<<<< HEAD:backend/server.js
 const inventoryRoutes = require('./routes/inventory');
 const patientRoutes = require('./routes/patient');
+========
+>>>>>>>> main:server.js
 
 // Importar middleware de manejo de errores
 const errorHandler = require('./middlewares/errorHandler');
