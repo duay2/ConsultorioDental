@@ -68,10 +68,15 @@ class User {
         return await this.collection.findOne({ email: email });
     }
 
-    // Buscar usuarios por rol
+    // Buscar usuarios por rol (case-insensitive)
     async findByRole(role) {
         await this.init();
-        return await this.collection.find({ role: role, is_active: true }).toArray();
+        // Buscar por rol exacto y también case-insensitive usando regex
+        const roleRegex = new RegExp(`^${role}$`, 'i');
+        return await this.collection.find({ 
+            role: { $regex: roleRegex }, 
+            is_active: true 
+        }).toArray();
     }
 
     // Buscar usuarios por nombre
