@@ -403,7 +403,7 @@ const validateEmail = [
 const validateRole = [
     query('role')
         .notEmpty().withMessage('El rol es requerido')
-        .isIn(['admin', 'doctor', 'assistant', 'receptionist']).withMessage('El rol debe ser: admin, doctor, assistant o receptionist'),
+        .isIn(['admin', 'doctor', 'dentista', 'assistant', 'receptionist']).withMessage('El rol debe ser: admin, doctor, dentista, assistant o receptionist'),
     handleValidationErrors
 ];
 
@@ -622,12 +622,12 @@ module.exports = {
     validateSearchQuery,
     validateOrthodonticAdjustment,
     validatePatientExists,
-    handleValidationErrors,
     validateCreateInventory,
     validateUpdateInventory,
     validateInventoryId,
     validateAdjustStock,
     validateCategoryQuery,
-    validateInventorySearchQuery
+    validateInventorySearchQuery,
+    handleValidationErrors
 };
 

@@ -20,6 +20,12 @@ import './components/patients-view.js';
 import './components/patients-modal.js';
 import './components/patients-table.js';
 import './components/toast-notification.js';
+import './components/daily-agenda-view.js';
+import './components/agenda-row.js';
+import './components/time-slot.js';
+import './components/appointment-card.js';
+import './components/new-appointment-modal.js';
+import './components/edit-appointment-modal.js';
 import authService from './services/auth-service.js';
 
 // Variable para evitar múltiples inicializaciones
@@ -166,25 +172,67 @@ function showDashboard(container) {
 
 
 /**
+ * Muestra la vista de agenda diaria
+ */
+function showAgenda(container) {
+    const appRoot = document.getElementById('app-root') || container;
+    appRoot.innerHTML = '<daily-agenda-view></daily-agenda-view>';
+    
+    // Actualizar navbar para marcar "Citas" como activo
+    const navbar = document.querySelector('app-navbar');
+    if (navbar && navbar.shadowRoot) {
+        const citasLink = navbar.shadowRoot.querySelector('[data-section="citas"]');
+        const allLinks = navbar.shadowRoot.querySelectorAll('.nav-link');
+        allLinks.forEach(link => link.classList.remove('active'));
+        if (citasLink) {
+            citasLink.classList.add('active');
+        }
+    }
+}
+
+/**
+ * Muestra la vista de inventario
+ */
+function showInventory(container) {
+    const appRoot = document.getElementById('app-root') || container;
+    appRoot.innerHTML = '<inventory-view></inventory-view>';
+    
+    // Actualizar navbar para marcar "Inventario" como activo
+    const navbar = document.querySelector('app-navbar');
+    if (navbar && navbar.shadowRoot) {
+        const inventarioLink = navbar.shadowRoot.querySelector('[data-section="inventario"]');
+        const allLinks = navbar.shadowRoot.querySelectorAll('.nav-link');
+        allLinks.forEach(link => link.classList.remove('active'));
+        if (inventarioLink) {
+            inventarioLink.classList.add('active');
+        }
+    }
+}
+
+/**
  * Configura los event listeners globales
  */
 function setupEventListeners() {
     // Usar delegación de eventos para manejar navbars que se crean dinámicamente
     document.body.addEventListener('navigate', (e) => {
-        console.log('Navegar a:', e.detail.section);
+        const section = e.detail?.section;
         const appRoot = document.getElementById('app-root') || document.body;
         
-        // Enrutamiento básico
-        switch (e.detail.section) {
+        console.log('Navegar a:', section);
+        
+        switch (section) {
+            case 'citas':
+                showAgenda(appRoot);
+                break;
             case 'inventario':
-                appRoot.innerHTML = '<inventory-view></inventory-view>';
+                showInventory(appRoot);
                 break;
             case 'pacientes':
                 appRoot.innerHTML = '<patients-view></patients-view>';
                 break;
             case 'citas':
             case 'registros':
-                // Por ahora volver al dashboard
+                // Por ahora mostrar dashboard, luego se pueden crear vistas específicas
                 showDashboard(appRoot);
                 break;
             default:

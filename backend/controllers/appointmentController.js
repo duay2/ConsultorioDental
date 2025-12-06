@@ -182,17 +182,22 @@ const getAppointmentsByDate = async (req, res, next) => {
             await databaseConnection.connect();
         }
 
-        const date = new Date(req.query.date);
+        const dateStr = req.query.date; // Ya viene como string "YYYY-MM-DD"
+        console.log(`[AppointmentController] Buscando citas para fecha: ${dateStr}`);
+        
         const appointmentModel = new Appointment();
-        const appointments = await appointmentModel.findByDate(date);
+        const appointments = await appointmentModel.findByDate(dateStr);
+
+        console.log(`[AppointmentController] Citas encontradas: ${appointments.length}`);
 
         res.status(200).json({
             message: 'Citas obtenidas exitosamente',
-            date: req.query.date,
+            date: dateStr,
             count: appointments.length,
             data: appointments
         });
     } catch (error) {
+        console.error('[AppointmentController] Error al obtener citas por fecha:', error);
         next(error);
     }
 };
