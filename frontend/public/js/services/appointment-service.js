@@ -34,31 +34,20 @@ class AppointmentService {
     async getAppointmentsByDate(date) {
         try {
             const url = `${API_BASE_URL}/appointments/date?date=${date}`;
-            console.log('[AppointmentService] Solicitando citas desde:', url);
-            console.log('[AppointmentService] Headers:', this.getHeaders());
-            
             const response = await fetch(url, {
                 method: 'GET',
                 headers: this.getHeaders()
             });
 
-            console.log('[AppointmentService] Response status:', response.status);
-            console.log('[AppointmentService] Response ok:', response.ok);
-
             if (!response.ok) {
                 const errorText = await response.text();
-                console.error('[AppointmentService] Error response:', errorText);
                 throw new Error(`Error: ${response.status} - ${errorText}`);
             }
 
             const data = await response.json();
-            console.log('[AppointmentService] Response data completa:', data);
-            console.log('[AppointmentService] Citas en data.data:', data.data);
-            console.log('[AppointmentService] Número de citas:', data.data?.length || 0);
             
             return data.data || [];
         } catch (error) {
-            console.error('[AppointmentService] Error al obtener citas por fecha:', error);
             throw error;
         }
     }
@@ -71,7 +60,6 @@ class AppointmentService {
     async getAppointmentById(appointmentId) {
         try {
             const url = `${API_BASE_URL}/appointments/${appointmentId}`;
-            console.log(`[AppointmentService] Obteniendo cita ${appointmentId} desde:`, url);
             
             const response = await fetch(url, {
                 method: 'GET',
@@ -80,15 +68,12 @@ class AppointmentService {
 
             if (!response.ok) {
                 const errorText = await response.text();
-                console.error('[AppointmentService] Error al obtener cita:', errorText);
                 throw new Error(`Error: ${response.status} - ${errorText}`);
             }
 
             const data = await response.json();
-            console.log(`[AppointmentService] Cita obtenida:`, data);
             return data.data;
         } catch (error) {
-            console.error('Error al obtener cita:', error);
             throw error;
         }
     }
@@ -102,7 +87,6 @@ class AppointmentService {
     async getAllAppointments(page = 1, limit = 100) {
         try {
             const url = `${API_BASE_URL}/appointments?page=${page}&limit=${limit}`;
-            console.log('[AppointmentService] Obteniendo todas las citas desde:', url);
             
             const response = await fetch(url, {
                 method: 'GET',
@@ -111,15 +95,12 @@ class AppointmentService {
 
             if (!response.ok) {
                 const errorText = await response.text();
-                console.error('[AppointmentService] Error al obtener todas las citas:', errorText);
                 throw new Error(`Error: ${response.status} - ${errorText}`);
             }
 
             const data = await response.json();
-            console.log('[AppointmentService] Todas las citas obtenidas:', data);
             return data;
         } catch (error) {
-            console.error('Error al obtener citas:', error);
             throw error;
         }
     }
@@ -133,8 +114,6 @@ class AppointmentService {
     async updateAppointment(appointmentId, updateData) {
         try {
             const url = `${API_BASE_URL}/appointments/${appointmentId}`;
-            console.log(`[AppointmentService] Actualizando cita ${appointmentId} en:`, url);
-            console.log(`[AppointmentService] Datos de actualización:`, updateData);
             
             const response = await fetch(url, {
                 method: 'PUT',
@@ -142,19 +121,42 @@ class AppointmentService {
                 body: JSON.stringify(updateData)
             });
 
-            console.log(`[AppointmentService] Response status: ${response.status}`);
 
             if (!response.ok) {
                 const errorText = await response.text();
-                console.error('[AppointmentService] Error response:', errorText);
                 throw new Error(`Error: ${response.status} - ${errorText}`);
             }
 
             const data = await response.json();
-            console.log(`[AppointmentService] Cita actualizada exitosamente:`, data);
             return data.data;
         } catch (error) {
-            console.error('Error al actualizar cita:', error);
+            throw error;
+        }
+    }
+
+    /**
+     * Actualizar el estado de una cita (incluyendo si está completada)
+     * @param {number} appointmentId - ID de la cita
+     * @param {string} status - Nuevo estado de la cita
+     * @returns {Promise<Object>} Cita actualizada
+     */
+    async updateAppointmentStatus(appointmentId, status) {
+        try {
+            const url = `${API_BASE_URL}/appointments/${appointmentId}/status`;
+            const response = await fetch(url, {
+                method: 'PATCH',
+                headers: this.getHeaders(),
+                body: JSON.stringify({ status: status })
+            });
+
+            if (!response.ok) {
+                const errorText = await response.text();
+                throw new Error(`Error: ${response.status} - ${errorText}`);
+            }
+
+            const data = await response.json();
+            return data.data;
+        } catch (error) {
             throw error;
         }
     }
@@ -179,7 +181,6 @@ class AppointmentService {
             const data = await response.json();
             return data.data;
         } catch (error) {
-            console.error('Error al crear cita:', error);
             throw error;
         }
     }
@@ -192,14 +193,12 @@ class AppointmentService {
     async deleteAppointment(appointmentId) {
         try {
             const url = `${API_BASE_URL}/appointments/${appointmentId}`;
-            console.log(`[AppointmentService] Eliminando cita ${appointmentId} en:`, url);
             
             const response = await fetch(url, {
                 method: 'DELETE',
                 headers: this.getHeaders()
             });
 
-            console.log(`[AppointmentService] Response status: ${response.status}`);
 
             if (!response.ok) {
                 let errorText = '';
@@ -208,7 +207,6 @@ class AppointmentService {
                 } catch (e) {
                     errorText = `Error ${response.status}`;
                 }
-                console.error('[AppointmentService] Error response:', errorText);
                 
                 // Intentar parsear como JSON si es posible
                 let errorData;
@@ -224,7 +222,6 @@ class AppointmentService {
             // El backend devuelve 204 (No Content) cuando elimina exitosamente
             // No intentar parsear JSON si no hay contenido
             if (response.status === 204) {
-                console.log(`[AppointmentService] Cita ${appointmentId} eliminada exitosamente (204 No Content)`);
                 return { success: true, message: 'Cita eliminada exitosamente' };
             }
 
@@ -232,13 +229,42 @@ class AppointmentService {
             const contentType = response.headers.get('content-type');
             if (contentType && contentType.includes('application/json')) {
                 const data = await response.json();
-                console.log(`[AppointmentService] Cita eliminada exitosamente:`, data);
                 return data;
             }
 
             return { success: true, message: 'Cita eliminada exitosamente' };
         } catch (error) {
-            console.error('Error al eliminar cita:', error);
+            throw error;
+        }
+    }
+
+    /**
+     * Obtener citas por ID de paciente
+     * @param {number|string} patientId - ID del paciente
+     * @returns {Promise<Object>} Objeto con lista de citas
+     */
+    async getAppointmentsByPatientId(patientId) {
+        try {
+            // Asegurar que patientId sea un número entero
+            const id = parseInt(patientId, 10);
+            if (isNaN(id) || id <= 0) {
+                throw new Error('ID de paciente inválido');
+            }
+
+            const url = `${API_BASE_URL}/appointments/patient/${id}`;
+            const response = await fetch(url, {
+                method: 'GET',
+                headers: this.getHeaders()
+            });
+
+            if (!response.ok) {
+                const errorText = await response.text();
+                throw new Error(`Error: ${response.status} - ${errorText}`);
+            }
+
+            const data = await response.json();
+            return data;
+        } catch (error) {
             throw error;
         }
     }

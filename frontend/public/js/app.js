@@ -4,23 +4,36 @@
  */
 
 // Importar todos los componentes
-import './components/navbar.js';
-import './components/login-view.js';
-import './components/dashboard-view.js';
-import './components/kpi-card.js';
-import './components/activity-feed.js';
-import './components/chart-panel.js';
-import './components/inventory-view.js';
-import './components/inventory-table.js';
-import './components/inventory-row.js';
-import './components/table-pagination.js';
-import './components/inventory-modal.js';
-import './components/daily-agenda-view.js';
-import './components/agenda-row.js';
-import './components/time-slot.js';
-import './components/appointment-card.js';
-import './components/new-appointment-modal.js';
-import './components/edit-appointment-modal.js';
+import './components/common/navbar.js';
+import './components/auth/login-view.js';
+import './components/dashboard/dashboard-view.js';
+import './components/dashboard/kpi-card.js';
+import './components/dashboard/activity-feed.js';
+import './components/dashboard/chart-panel.js';
+import './components/inventory/inventory-view.js';
+import './components/inventory/inventory-table.js';
+import './components/inventory/inventory-row.js';
+import './components/common/table-pagination.js';
+import './components/inventory/inventory-modal.js';
+import './components/appointments/daily-agenda-view.js';
+import './components/appointments/agenda-row.js';
+import './components/appointments/time-slot.js';
+import './components/appointments/appointment-card.js';
+import './components/appointments/new-appointment-modal.js';
+import './components/appointments/edit-appointment-modal.js';
+import './components/patients/patient-view.js';
+import './components/patients/patient-table.js';
+import './components/patients/patient-row.js';
+import './components/patients/patient-modal.js';
+import './components/patients/view-appointments-modal.js';
+import './components/dental-records/dental-records-view.js';
+import './components/dental-records/dental-records-table.js';
+import './components/dental-records/dental-records-row.js';
+import './components/dental-records/dental-records-modal.js';
+import './components/appointments/appointment-table.js'; // Nuevo import
+import './components/appointments/appointment-row.js'; // Nuevo import
+import './components/appointments/appointments-view.js'; // Nuevo import
+import './components/common/confirmation-modal.js'; // Nuevo import para el modal de confirmación
 import authService from './services/auth-service.js';
 
 // Variable para evitar múltiples inicializaciones
@@ -31,10 +44,8 @@ let navbarInstance = null;
 const navbarObserver = new MutationObserver((mutations) => {
     const navbars = document.querySelectorAll('app-navbar');
     if (navbars.length > 1) {
-        console.warn(`⚠️ DETECTADO: ${navbars.length} navbars en el DOM! Eliminando duplicados...`);
         // Mantener solo el primero, eliminar los demás
         for (let i = 1; i < navbars.length; i++) {
-            console.warn(`Eliminando navbar duplicado ${i + 1}`);
             navbars[i].remove();
         }
     }
@@ -52,13 +63,10 @@ if (document.readyState === 'loading') {
 // Inicialización cuando el DOM esté listo
 document.addEventListener('DOMContentLoaded', async () => {
     if (isInitialized) {
-        console.warn('Aplicación ya inicializada, evitando doble inicialización');
         return;
     }
     isInitialized = true;
-    
-    console.log('DentalFlow - Aplicación inicializada');
-    
+
     // Verificar autenticación y mostrar vista correspondiente
     await checkAuthAndRender();
     
@@ -101,7 +109,6 @@ function showLogin(container) {
 
 // Función separada para manejar login exitoso
 function handleLoginSuccess(e) {
-    console.log('Login exitoso, mostrando dashboard');
     const appRoot = document.getElementById('app-root') || document.body;
     showDashboard(appRoot);
 }
@@ -115,21 +122,16 @@ let isShowingDashboard = false;
 function showDashboard(container) {
     // Evitar múltiples llamadas simultáneas
     if (isShowingDashboard) {
-        console.warn('showDashboard ya está ejecutándose, ignorando llamada duplicada');
         return;
     }
     isShowingDashboard = true;
-    
-    console.log('showDashboard llamado');
-    
+
     // Asegurarse de que container sea el app-root
     const appRoot = document.getElementById('app-root') || container;
-    
+
     // Remover TODOS los navbars existentes (en todo el documento)
     const existingNavbars = document.querySelectorAll('app-navbar');
-    console.log(`Navbars encontrados antes de eliminar: ${existingNavbars.length}`);
     existingNavbars.forEach((nav, index) => {
-        console.log(`Eliminando navbar ${index + 1}`);
         nav.remove();
     });
     navbarInstance = null; // Resetear la referencia
@@ -141,23 +143,28 @@ function showDashboard(container) {
     setTimeout(() => {
         // Verificar si ya hay un navbar después de limpiar
         const navbarsAfterClean = document.querySelectorAll('app-navbar');
-        console.log(`Navbars después de limpiar: ${navbarsAfterClean.length}`);
-        
+
         // Si aún hay navbars, eliminarlos
         if (navbarsAfterClean.length > 0) {
-            console.warn('Aún hay navbars después de limpiar, eliminándolos');
             navbarsAfterClean.forEach(nav => nav.remove());
         }
-        
+
         // Crear un nuevo navbar SOLO si no existe uno
         if (!navbarInstance) {
-            console.log('Creando nuevo navbar');
             navbarInstance = document.createElement('app-navbar');
             // Insertar al inicio del body, antes del app-root
             document.body.insertBefore(navbarInstance, appRoot);
-            console.log('Navbar creado e insertado');
-        } else {
-            console.warn('No se creará navbar - navbarInstance ya existe');
+        }
+
+        // Actualizar navbar para marcar "Dashboard" como activo
+        const navbar = document.querySelector('app-navbar');
+        if (navbar && navbar.shadowRoot) {
+            const dashboardLink = navbar.shadowRoot.querySelector('[data-section="dashboard"]');
+            const allLinks = navbar.shadowRoot.querySelectorAll('.nav-link');
+            allLinks.forEach(link => link.classList.remove('active'));
+            if (dashboardLink) {
+                dashboardLink.classList.add('active');
+            }
         }
         
         isShowingDashboard = false;
@@ -189,7 +196,7 @@ function showAgenda(container) {
 function showInventory(container) {
     const appRoot = document.getElementById('app-root') || container;
     appRoot.innerHTML = '<inventory-view></inventory-view>';
-    
+
     // Actualizar navbar para marcar "Inventario" como activo
     const navbar = document.querySelector('app-navbar');
     if (navbar && navbar.shadowRoot) {
@@ -203,6 +210,44 @@ function showInventory(container) {
 }
 
 /**
+ * Muestra la vista de pacientes
+ */
+function showPatients(container) {
+    const appRoot = document.getElementById('app-root') || container;
+    appRoot.innerHTML = '<patient-view></patient-view>';
+
+    // Actualizar navbar para marcar "Pacientes" como activo
+    const navbar = document.querySelector('app-navbar');
+    if (navbar && navbar.shadowRoot) {
+        const pacientesLink = navbar.shadowRoot.querySelector('[data-section="pacientes"]');
+        const allLinks = navbar.shadowRoot.querySelectorAll('.nav-link');
+        allLinks.forEach(link => link.classList.remove('active'));
+        if (pacientesLink) {
+            pacientesLink.classList.add('active');
+        }
+    }
+}
+
+/**
+ * Muestra la vista de registros dentales
+ */
+function showDentalRecords(container) {
+    const appRoot = document.getElementById('app-root') || container;
+    appRoot.innerHTML = '<dental-records-view></dental-records-view>';
+
+    // Actualizar navbar para marcar "Registros" como activo
+    const navbar = document.querySelector('app-navbar');
+    if (navbar && navbar.shadowRoot) {
+        const registrosLink = navbar.shadowRoot.querySelector('[data-section="registros"]');
+        const allLinks = navbar.shadowRoot.querySelectorAll('.nav-link');
+        allLinks.forEach(link => link.classList.remove('active'));
+        if (registrosLink) {
+            registrosLink.classList.add('active');
+        }
+    }
+}
+
+/**
  * Configura los event listeners globales
  */
 function setupEventListeners() {
@@ -211,19 +256,24 @@ function setupEventListeners() {
         const section = e.detail?.section;
         const appRoot = document.getElementById('app-root') || document.body;
         
-        console.log('Navegar a:', section);
-        
         switch (section) {
+            case 'dashboard':
+                showDashboard(appRoot);
+                break;
             case 'citas':
                 showAgenda(appRoot);
+                break;
+            case 'citas-gestion': // Nueva ruta para la gestión de citas
+                showAppointmentsManagement(appRoot);
                 break;
             case 'inventario':
                 showInventory(appRoot);
                 break;
             case 'pacientes':
+                showPatients(appRoot);
+                break;
             case 'registros':
-                // Por ahora mostrar dashboard, luego se pueden crear vistas específicas
-                showDashboard(appRoot);
+                showDentalRecords(appRoot);
                 break;
             default:
                 showDashboard(appRoot);
@@ -238,4 +288,19 @@ function setupEventListeners() {
         const appRoot = document.getElementById('app-root') || document.body;
         showLogin(appRoot);
     });
+}
+
+function showAppointmentsManagement(container) {
+    const appRoot = document.getElementById('app-root') || container;
+    appRoot.innerHTML = '<appointments-view></appointments-view>';
+
+    const navbar = document.querySelector('app-navbar');
+    if (navbar && navbar.shadowRoot) {
+        const citasGestionLink = navbar.shadowRoot.querySelector('[data-section="citas-gestion"]');
+        const allLinks = navbar.shadowRoot.querySelectorAll('.nav-link');
+        allLinks.forEach(link => link.classList.remove('active'));
+        if (citasGestionLink) {
+            citasGestionLink.classList.add('active');
+        }
+    }
 }

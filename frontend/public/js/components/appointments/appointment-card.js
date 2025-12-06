@@ -54,7 +54,6 @@ class AppointmentCard extends HTMLElement {
     setupEditButton() {
         const editBtn = this.shadowRoot.querySelector('.edit-btn');
         if (!editBtn) {
-            console.warn('[AppointmentCard] Botón de editar no encontrado');
             return;
         }
 
@@ -62,7 +61,6 @@ class AppointmentCard extends HTMLElement {
             e.stopPropagation(); // Evitar que se active el drag
             e.preventDefault();
             
-            console.log('[AppointmentCard] Botón de editar clickeado, ID de cita:', this._appointmentId);
             
             // Despachar evento para abrir modal de edición
             const event = new CustomEvent('appointment-edit', {
@@ -75,7 +73,6 @@ class AppointmentCard extends HTMLElement {
                 }
             });
             
-            console.log('[AppointmentCard] Despachando evento appointment-edit:', event.detail);
             this.dispatchEvent(event);
         });
     }
@@ -140,7 +137,6 @@ class AppointmentCard extends HTMLElement {
             dragImage.style.width = card.offsetWidth + 'px';
             e.dataTransfer.setDragImage(dragImage, 0, 0);
 
-            console.log(`[AppointmentCard] Iniciando arrastre de cita ID: ${this._appointmentId}`);
         });
 
         // Evento dragend - cuando termina el arrastre
@@ -153,9 +149,7 @@ class AppointmentCard extends HTMLElement {
 
             // Verificar si se soltó exitosamente
             if (e.dataTransfer.dropEffect === 'move') {
-                console.log(`[AppointmentCard] Cita ${this._appointmentId} soltada exitosamente`);
             } else {
-                console.log(`[AppointmentCard] Arrastre cancelado para cita ${this._appointmentId}`);
             }
         });
     }

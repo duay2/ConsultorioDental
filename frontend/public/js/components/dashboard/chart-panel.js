@@ -26,11 +26,9 @@ class ChartPanel extends HTMLElement {
                     // Luego cargar datos reales
                     this.loadAppointmentData();
                 } else {
-                    console.error('Chart.js no está disponible');
                 }
             }, 200);
         }).catch(error => {
-            console.error('Error cargando Chart.js:', error);
         });
     }
 
@@ -40,14 +38,13 @@ class ChartPanel extends HTMLElement {
                 const data = JSON.parse(newValue);
                 this.updateChart(data);
             } catch (e) {
-                console.error('Error parsing status data:', e);
             }
         }
     }
 
     async loadAppointmentData() {
         try {
-            const dashboardService = (await import('../services/dashboard-service.js')).default;
+            const dashboardService = (await import('../../services/dashboard-service.js')).default;
             const statusCounts = await dashboardService.getAppointmentsByStatus();
             this.statusData = statusCounts;
             
@@ -59,7 +56,6 @@ class ChartPanel extends HTMLElement {
                 this.createChart(statusCounts);
             }
         } catch (error) {
-            console.error('Error cargando datos de appointments:', error);
             // Si hay error, mantener los datos por defecto
         }
     }
@@ -176,12 +172,10 @@ class ChartPanel extends HTMLElement {
     createChart(data = null) {
         const canvas = this.shadowRoot.querySelector('#appointmentChart');
         if (!canvas) {
-            console.error('Canvas no encontrado');
             return;
         }
         
         if (!window.Chart) {
-            console.error('Chart.js no está disponible');
             return;
         }
 
@@ -193,7 +187,6 @@ class ChartPanel extends HTMLElement {
             completed: 0
         };
 
-        console.log('Creando gráfico con datos:', statusCounts);
 
         // Preparar datos para la gráfica (solo programadas y completadas)
         const scheduledCount = statusCounts.scheduled || 0;
@@ -209,7 +202,6 @@ class ChartPanel extends HTMLElement {
             }]
         };
 
-        console.log('Datos del gráfico:', chartData);
 
         // Si ya existe un gráfico, destruirlo primero
         if (this.chart) {
@@ -248,9 +240,7 @@ class ChartPanel extends HTMLElement {
                     }
                 }
             });
-            console.log('Gráfico creado exitosamente');
         } catch (error) {
-            console.error('Error al crear el gráfico:', error);
         }
     }
 

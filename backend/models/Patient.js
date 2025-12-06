@@ -10,7 +10,18 @@ class Patient {
     }
 
     async init() {
-        this.collection = databaseConnection.getCollection('patients');
+        try {
+            if (!databaseConnection.isConnectionActive()) {
+                console.log('[PatientModel] Intentando conectar a la base de datos desde init()...');
+                await databaseConnection.connect();
+                console.log('[PatientModel] Conexión establecida desde init().');
+            }
+            this.collection = databaseConnection.getCollection('patients');
+            console.log('[PatientModel] Colección \'patients\' obtenida.');
+        } catch (error) {
+            console.error('[PatientModel] Error al inicializar el modelo o conectar a la base de datos:', error);
+            throw error;
+        }
     }
 
     // Obtener el siguiente ID numérico
@@ -46,12 +57,13 @@ class Patient {
             last_name: patientData.last_name,
             email: patientData.email,
             phone: patientData.phone,
-            birth_date: new Date(patientData.birth_date),
+            birth_date: patientData.birth_date ? new Date(patientData.birth_date) : null,
             address: patientData.address,
             insurance: patientData.insurance,
             created_at: new Date(),
             orthodontics: patientData.orthodontics || null,
-            dental_records_refs: []
+            dental_records_refs: [],
+            appointment_history: [] // Nuevo campo
         };
         const result = await this.collection.insertOne(patient);
         return { ...patient, _id: result.insertedId };
@@ -143,9 +155,26 @@ class Patient {
     }
 
     // Eliminar paciente permanentemente
-    async delete(patientId) {
+    async deletePatient(patientId) { // Renombrado de 'delete' a 'deletePatient'
         await this.init();
-        return await this.collection.deleteOne({ id: parseInt(patientId) });
+        console.log(`[PatientModel] Intentando eliminar paciente con ID: ${patientId}`);
+        try {
+            const result = await this.collection.deleteOne({ id: parseInt(patientId) });
+            console.log('[PatientModel] Resultado de deleteOne:', result);
+            return result;
+        } catch (error) {
+            console.error(`[PatientModel] Error al ejecutar deleteOne para ID ${patientId}:`, error);
+            throw error;
+        }
+    }
+
+    // Agregar cita al historial del paciente
+    async addAppointmentToHistory(patientId, appointmentId) {
+        await this.init();
+        return await this.collection.updateOne(
+            { id: parseInt(patientId) },
+            { $push: { appointment_history: new ObjectId(appointmentId) } }
+        );
     }
 }
 

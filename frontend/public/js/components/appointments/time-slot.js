@@ -80,7 +80,6 @@ class TimeSlot extends HTMLElement {
             const appointmentId = e.dataTransfer.getData('text/plain');
 
             if (appointmentId) {
-                console.log(`[TimeSlot] Cita ${appointmentId} soltada en horario ${this._time}`);
 
                 // Despachar Custom Event hacia arriba (desde el host, no desde shadowRoot)
                 const rescheduleEvent = new CustomEvent('appointment-rescheduled', {

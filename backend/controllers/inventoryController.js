@@ -183,12 +183,17 @@ const updateInventoryItem = async (req, res, next) => {
         }
 
         // Esperar un momento para asegurar que MongoDB haya procesado la actualización
-        await new Promise(resolve => setTimeout(resolve, 100));
+        await new Promise(resolve => setTimeout(resolve, 200));
 
         // Obtener el item actualizado
         const updatedItem = await inventoryModel.findById(itemId);
         console.log('[updateInventoryItem] Updated item from DB:', updatedItem);
         console.log('[updateInventoryItem] Updated item current_stock:', updatedItem?.current_stock);
+
+        // Asegurar que current_stock sea un número
+        if (updatedItem && typeof updatedItem.current_stock !== 'number') {
+            updatedItem.current_stock = parseInt(updatedItem.current_stock) || 0;
+        }
 
         res.status(200).json({
             message: 'Item de inventario actualizado exitosamente',

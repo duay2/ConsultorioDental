@@ -49,7 +49,6 @@ const apiService = {
 
             return await response.json();
         } catch (error) {
-            console.error(`Error en la solicitud a ${endpoint}:`, error);
             throw error;
         }
     }

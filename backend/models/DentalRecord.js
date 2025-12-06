@@ -74,10 +74,29 @@ class DentalRecord {
         }).sort({ created_at: -1 }).toArray();
     }
 
-    // Obtener todos los registros (sin paginación)
+    // Obtener todos los registros (sin paginación) con información del paciente
     async findAll() {
         await this.init();
-        const records = await this.collection.find({}).sort({ created_at: -1 }).toArray();
+        const records = await this.collection.aggregate([
+            {
+                $lookup: {
+                    from: 'patients',
+                    localField: 'patient_id',
+                    foreignField: 'id',
+                    as: 'patient_info'
+                }
+            },
+            {
+                $unwind: {
+                    path: '$patient_info',
+                    preserveNullAndEmptyArrays: true
+                }
+            },
+            {
+                $sort: { created_at: -1 }
+            }
+        ]).toArray();
+
         const total = records.length;
         return { records, total };
     }

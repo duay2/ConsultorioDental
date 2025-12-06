@@ -58,6 +58,9 @@ const validateCreateAppointment = [
     body('duration_minutes')
         .optional()
         .isInt({ min: 1 }).withMessage('La duración debe ser un número entero positivo en minutos'),
+    body('precio_cita') // Nueva validación para el precio de la cita
+        .optional()
+        .isFloat({ min: 0 }).withMessage('El precio de la cita debe ser un número positivo'),
     handleValidationErrors
 ];
 
@@ -92,6 +95,9 @@ const validateUpdateAppointment = [
     body('duration_minutes')
         .optional()
         .isInt({ min: 1 }).withMessage('La duración debe ser un número entero positivo en minutos'),
+    body('precio_cita') // Nueva validación para el precio de la cita
+        .optional()
+        .isFloat({ min: 0 }).withMessage('El precio de la cita debe ser un número positivo'),
     handleValidationErrors
 ];
 
@@ -433,7 +439,10 @@ const validateUpdatePaymentStatus = [
 // :id en la ruta (GET/PUT/DELETE /api/patients/:id)
 const validatePatientIdParam = [
   param('id')
-    .isInt({ min: 1 }).withMessage('El ID debe ser un número entero positivo'),
+    .trim()
+    .notEmpty().withMessage('El ID es requerido')
+    .matches(/^\d+$/).withMessage('El ID debe ser un número entero positivo')
+    .customSanitizer((value) => parseInt(value, 10)),
   handleValidationErrors
 ];
 
@@ -447,15 +456,33 @@ const validatePatientEmailQuery = [
 
 // POST /api/patients
 const validateCreatePatient = [
-  body('first_name').notEmpty().withMessage('first_name es requerido').isString(),
-  body('last_name').notEmpty().withMessage('last_name es requerido').isString(),
-  body('email').notEmpty().withMessage('email es requerido').isEmail(),
+  body('first_name').notEmpty().withMessage('first_name es requerido').isString().trim(),
+  body('last_name').notEmpty().withMessage('last_name es requerido').isString().trim(),
+  body('email').notEmpty().withMessage('email es requerido').isEmail().normalizeEmail(),
   body('birth_date')
-    .notEmpty().withMessage('birth_date es requerido')
+    .optional({ checkFalsy: true })
     .isISO8601().withMessage('birth_date debe ser ISO (YYYY-MM-DD)'),
-  body('phone').optional().isString(),
-  body('address').optional().isString(),
-  body('insurance').optional().isString(),
+  body('phone')
+    .optional({ checkFalsy: true })
+    .custom((value) => {
+      if (value === '' || value === null || value === undefined) return true;
+      return typeof value === 'string';
+    })
+    .withMessage('phone debe ser una cadena de texto'),
+  body('address')
+    .optional({ checkFalsy: true })
+    .custom((value) => {
+      if (value === '' || value === null || value === undefined) return true;
+      return typeof value === 'string';
+    })
+    .withMessage('address debe ser una cadena de texto'),
+  body('medical_history')
+    .optional({ checkFalsy: true })
+    .custom((value) => {
+      if (value === '' || value === null || value === undefined) return true;
+      return typeof value === 'string';
+    })
+    .withMessage('medical_history debe ser una cadena de texto'),
   handleValidationErrors
 ];
 
@@ -468,6 +495,7 @@ const validateUpdatePatient = [
   body('birth_date').optional().isISO8601().withMessage('birth_date debe ser ISO'),
   body('phone').optional().isString(),
   body('address').optional().isString(),
+  body('medical_history').optional().isString(),
   body('insurance').optional().isString(),
   handleValidationErrors
 ];

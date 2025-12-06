@@ -1,48 +1,17 @@
 /**
- * new-appointment-modal
- * Modal para crear una nueva cita
+ * edit-appointment-modal
+ * Modal para editar una cita existente
  */
-class NewAppointmentModal extends HTMLElement {
+class EditAppointmentModal extends HTMLElement {
     constructor() {
         super();
         this.attachShadow({ mode: 'open' });
-        this._selectedDate = new Date();
+        this._appointmentId = null;
+        this._appointment = null;
         this._patients = [];
         this._doctors = [];
         this._occupiedTimes = [];
         this._timeSlots = this.generateTimeSlots();
-    }
-
-    static get observedAttributes() {
-        return ['selected-date'];
-    }
-
-    attributeChangedCallback(name, oldValue, newValue) {
-        if (name === 'selected-date' && oldValue !== newValue) {
-            // Si newValue es un string YYYY-MM-DD, crear Date correctamente en hora local
-            // Usar new Date(year, month - 1, day) para crear la fecha en hora local medianoche
-            if (newValue && typeof newValue === 'string') {
-                const parts = newValue.split('-');
-                if (parts.length === 3) {
-                    const year = parseInt(parts[0], 10);
-                    const month = parseInt(parts[1], 10);
-                    const day = parseInt(parts[2], 10);
-                    // Crear fecha en hora local (medianoche local del día especificado)
-                    this._selectedDate = new Date(year, month - 1, day, 0, 0, 0, 0);
-                    console.log('[NewAppointmentModal] Fecha string recibida:', newValue);
-                    console.log('[NewAppointmentModal] Fecha creada (local):', this._selectedDate);
-                    console.log('[NewAppointmentModal] Año:', year, 'Mes:', month, 'Día:', day);
-                    console.log('[NewAppointmentModal] Fecha formateada:', this.formatDateForAPI(this._selectedDate));
-                } else {
-                    this._selectedDate = new Date(newValue);
-                }
-            } else {
-                this._selectedDate = newValue ? new Date(newValue) : new Date();
-            }
-            if (this.shadowRoot) {
-                this.loadOccupiedTimes();
-            }
-        }
     }
 
     generateTimeSlots() {
@@ -62,94 +31,103 @@ class NewAppointmentModal extends HTMLElement {
 
     connectedCallback() {
         this.render();
-        this.loadData();
         this.setupEventListeners();
     }
 
     async loadData() {
         try {
             // Verificar autenticación
-            const authService = await import('../services/auth-service.js');
+            const authService = await import('../../services/auth-service.js');
             if (!authService.default.isAuthenticated()) {
                 this.showError('No estás autenticado. Por favor, inicia sesión.');
                 return;
             }
 
             // Cargar pacientes y doctores en paralelo
-            const [patientService, userService] = await Promise.all([
-                import('../services/patient-service.js'),
-                import('../services/user-service.js')
+            const [patientService, userService, appointmentService] = await Promise.all([
+                import('../../services/patient-service.js'),
+                import('../../services/user-service.js'),
+                import('../../services/appointment-service.js')
             ]);
 
-            console.log('Cargando pacientes y doctores...');
             
+            // Cargar la cita actual
+            if (this._appointmentId) {
+                this._appointment = await appointmentService.default.getAppointmentById(this._appointmentId);
+                console.log('[EditAppointmentModal] Cita cargada:', this._appointment);
+                console.log('[EditAppointmentModal] Precio de la cita:', this._appointment?.precio_cita);
+            }
+
             const [patients, doctors] = await Promise.all([
                 patientService.default.getAllPatients().catch(err => {
-                    console.error('Error específico al cargar pacientes:', err);
                     throw new Error(`Error al cargar pacientes: ${err.message}`);
                 }),
                 userService.default.getDoctorsAndDentists().catch(err => {
-                    console.error('Error específico al cargar doctores:', err);
                     throw new Error(`Error al cargar doctores: ${err.message}`);
                 })
             ]);
 
-            console.log('Pacientes cargados:', patients.length);
-            console.log('Doctores cargados:', doctors.length);
-
             this._patients = patients || [];
             this._doctors = doctors || [];
-            
-            if (this._patients.length === 0) {
-                this.showError('No hay pacientes registrados. Por favor, registre pacientes primero.');
+
+            // Cargar horarios ocupados para la fecha actual de la cita
+            if (this._appointment) {
+                await this.loadOccupiedTimes();
             }
-            
-            if (this._doctors.length === 0) {
-                this.showError('No hay doctores registrados. Por favor, registre doctores primero.');
-            }
-            
+
             this.updateSelects();
-            await this.loadOccupiedTimes();
         } catch (error) {
-            console.error('Error al cargar datos:', error);
-            const errorMessage = error.message || 'Error al cargar datos. Por favor, recarga la página.';
-            this.showError(errorMessage);
+            this.showError(error.message || 'Error al cargar los datos necesarios.');
         }
     }
 
     async loadOccupiedTimes() {
+        if (!this._appointment) return;
+
         try {
-            const appointmentService = await import('../services/appointment-service.js');
-            const dateStr = this.formatDateForAPI(this._selectedDate);
+            const appointmentService = await import('../../services/appointment-service.js');
+            const dateStr = this.formatDateForAPI(new Date(this._appointment.appointment_date));
+            
             const appointments = await appointmentService.default.getAppointmentsByDate(dateStr);
             
-            this._occupiedTimes = appointments.map(apt => apt.appointment_time || apt.time);
+            // Obtener horarios ocupados, excluyendo la cita actual que estamos editando
+            this._occupiedTimes = appointments
+                .filter(apt => apt.id !== this._appointmentId)
+                .map(apt => apt.appointment_time || apt.time)
+                .filter(time => time);
+            
             this.updateTimeSelect();
         } catch (error) {
-            console.error('Error al cargar horarios ocupados:', error);
         }
     }
 
     formatDateForAPI(date) {
-        // Usar métodos de fecha local (getFullYear, getMonth, getDate) para evitar problemas de zona horaria
         const year = date.getFullYear();
         const month = String(date.getMonth() + 1).padStart(2, '0');
         const day = String(date.getDate()).padStart(2, '0');
-        const dateStr = `${year}-${month}-${day}`;
-        console.log('[NewAppointmentModal] Fecha formateada para API:', dateStr, 'desde fecha:', date);
-        return dateStr;
+        return `${year}-${month}-${day}`;
     }
 
     updateSelects() {
         const patientSelect = this.shadowRoot.querySelector('#patient-select');
         const doctorSelect = this.shadowRoot.querySelector('#doctor-select');
+        const dateInput = this.shadowRoot.querySelector('#date-input');
+        const timeSelect = this.shadowRoot.querySelector('#time-select');
+        const typeSelect = this.shadowRoot.querySelector('#type-select');
+        const durationSelect = this.shadowRoot.querySelector('#duration-select');
+        const notesTextarea = this.shadowRoot.querySelector('#notes-textarea');
+        const priceInput = this.shadowRoot.querySelector('#price-input'); // Nuevo
 
         if (patientSelect) {
             patientSelect.innerHTML = '<option value="">Seleccione un paciente</option>';
             this._patients.forEach(patient => {
                 const option = document.createElement('option');
                 option.value = patient.id;
-                option.textContent = `${patient.first_name} ${patient.last_name} - ${patient.phone || 'Sin teléfono'}`;
+                option.textContent = `${patient.first_name} ${patient.last_name}`;
+                if (this._appointment && this._appointment.patient_info && 
+                    this._appointment.patient_info.id === patient.id) {
+                    option.selected = true;
+                }
                 patientSelect.appendChild(option);
             });
         }
@@ -160,9 +138,75 @@ class NewAppointmentModal extends HTMLElement {
                 const option = document.createElement('option');
                 option.value = doctor.id;
                 option.textContent = doctor.name || `${doctor.first_name || ''} ${doctor.last_name || ''}`.trim() || doctor.email;
+                if (this._appointment && this._appointment.doctor_info && 
+                    this._appointment.doctor_info.id === doctor.id) {
+                    option.selected = true;
+                }
                 doctorSelect.appendChild(option);
             });
         }
+
+        if (dateInput && this._appointment) {
+            // Manejar la fecha correctamente para evitar problemas de zona horaria
+            let appointmentDate;
+            if (typeof this._appointment.appointment_date === 'string') {
+                // Si es string, puede ser ISO string o YYYY-MM-DD
+                if (this._appointment.appointment_date.includes('T')) {
+                    // Es ISO string (UTC), usar métodos UTC para obtener el día correcto
+                    appointmentDate = new Date(this._appointment.appointment_date);
+                    // Usar métodos UTC para obtener año, mes y día
+                    const year = appointmentDate.getUTCFullYear();
+                    const month = String(appointmentDate.getUTCMonth() + 1).padStart(2, '0');
+                    const day = String(appointmentDate.getUTCDate()).padStart(2, '0');
+                    const dateValue = `${year}-${month}-${day}`;
+                    
+                    dateInput.value = dateValue;
+                    return; // Salir temprano para evitar procesar dos veces
+                } else {
+                    // Es YYYY-MM-DD, usar directamente
+                    dateInput.value = this._appointment.appointment_date;
+                    return;
+                }
+            } else if (this._appointment.appointment_date instanceof Date) {
+                appointmentDate = this._appointment.appointment_date;
+            } else {
+                appointmentDate = new Date(this._appointment.appointment_date);
+            }
+            
+            // Si llegamos aquí, usar métodos UTC para obtener año, mes y día
+            const year = appointmentDate.getUTCFullYear();
+            const month = String(appointmentDate.getUTCMonth() + 1).padStart(2, '0');
+            const day = String(appointmentDate.getUTCDate()).padStart(2, '0');
+            const dateValue = `${year}-${month}-${day}`;
+            
+            dateInput.value = dateValue;
+        }
+
+        if (typeSelect && this._appointment) {
+            typeSelect.value = this._appointment.type || 'consultation';
+        }
+
+        if (durationSelect && this._appointment) {
+            durationSelect.value = this._appointment.duration_minutes || 30;
+        }
+
+        if (notesTextarea && this._appointment) {
+            notesTextarea.value = this._appointment.notes || '';
+        }
+
+        if (priceInput && this._appointment) {
+            // Asegurar que el precio se cargue correctamente
+            // Verificar múltiples posibles ubicaciones del campo
+            const precio = this._appointment.precio_cita !== undefined && this._appointment.precio_cita !== null 
+                ? this._appointment.precio_cita 
+                : (this._appointment.data?.precio_cita !== undefined && this._appointment.data?.precio_cita !== null
+                    ? this._appointment.data.precio_cita
+                    : 0);
+            priceInput.value = precio;
+            console.log('[EditAppointmentModal] Precio cargado en input:', precio);
+        }
+
+        this.updateTimeSelect();
     }
 
     updateTimeSelect() {
@@ -174,11 +218,22 @@ class NewAppointmentModal extends HTMLElement {
         this._timeSlots.forEach(time => {
             const option = document.createElement('option');
             option.value = time;
+            option.textContent = time;
             
+            // Marcar como deshabilitado si está ocupado (excepto la hora actual de la cita)
             const isOccupied = this._occupiedTimes.includes(time);
-            option.textContent = isOccupied ? `${time} (Ocupado)` : time;
-            option.disabled = isOccupied;
-            option.style.color = isOccupied ? '#999' : '#000';
+            const isCurrentTime = this._appointment && 
+                (this._appointment.appointment_time === time || this._appointment.time === time);
+            
+            if (isOccupied && !isCurrentTime) {
+                option.disabled = true;
+                option.textContent += ' (Ocupado)';
+            }
+            
+            // Seleccionar la hora actual de la cita
+            if (isCurrentTime) {
+                option.selected = true;
+            }
             
             timeSelect.appendChild(option);
         });
@@ -186,16 +241,12 @@ class NewAppointmentModal extends HTMLElement {
 
     setupEventListeners() {
         const closeBtn = this.shadowRoot.querySelector('.close-btn');
-        const cancelBtn = this.shadowRoot.querySelector('.cancel-btn');
         const submitBtn = this.shadowRoot.querySelector('.submit-btn');
         const form = this.shadowRoot.querySelector('.appointment-form');
+        const dateInput = this.shadowRoot.querySelector('#date-input');
 
         if (closeBtn) {
             closeBtn.addEventListener('click', () => this.close());
-        }
-
-        if (cancelBtn) {
-            cancelBtn.addEventListener('click', () => this.close());
         }
 
         if (submitBtn) {
@@ -206,6 +257,12 @@ class NewAppointmentModal extends HTMLElement {
             form.addEventListener('submit', (e) => {
                 e.preventDefault();
                 this.handleSubmit();
+            });
+        }
+
+        if (dateInput) {
+            dateInput.addEventListener('change', () => {
+                this.loadOccupiedTimes();
             });
         }
 
@@ -227,19 +284,23 @@ class NewAppointmentModal extends HTMLElement {
         const formData = new FormData(form);
         const patientId = formData.get('patient');
         const doctorId = formData.get('doctor');
+        const dateStr = formData.get('date');
         const time = formData.get('time');
         const type = formData.get('type');
         const notes = formData.get('notes');
-        const duration = parseInt(formData.get('duration')) || 30;
+        const duration_minutes = parseInt(formData.get('duration')) || 30;
+        const precio_cita = parseFloat(formData.get('precio_cita')) || 0; // Nuevo
 
         // Validación
-        if (!patientId || !doctorId || !time) {
+        if (!patientId || !doctorId || !dateStr || !time) {
             this.showError('Por favor, complete todos los campos requeridos.');
             return;
         }
 
-        // Validar que el horario no esté ocupado
-        if (this._occupiedTimes.includes(time)) {
+        // Validar que el horario no esté ocupado (excepto si es la hora actual)
+        const isCurrentTime = this._appointment && 
+            (this._appointment.appointment_time === time || this._appointment.time === time);
+        if (this._occupiedTimes.includes(time) && !isCurrentTime) {
             this.showError('Este horario ya está ocupado. Por favor, seleccione otro.');
             return;
         }
@@ -258,27 +319,26 @@ class NewAppointmentModal extends HTMLElement {
         
         try {
             submitBtn.disabled = true;
-            submitBtn.textContent = 'Creando...';
+            submitBtn.textContent = 'Guardando...';
             if (errorMsg) errorMsg.textContent = '';
 
-            const appointmentService = await import('../services/appointment-service.js');
-            const dateStr = this.formatDateForAPI(this._selectedDate);
-            
-            console.log('[NewAppointmentModal] Creando cita con:');
-            console.log('  - Fecha seleccionada (Date object):', this._selectedDate);
-            console.log('  - Fecha formateada (string):', dateStr);
-            console.log('  - Hora:', time);
-            console.log('  - Año:', this._selectedDate.getFullYear());
-            console.log('  - Mes:', this._selectedDate.getMonth() + 1);
-            console.log('  - Día:', this._selectedDate.getDate());
+            const appointmentService = await import('../../services/appointment-service.js');
 
-            const appointmentData = {
-                appointment_date: dateStr,
+            // Asegurar que dateStr esté en formato YYYY-MM-DD
+            
+            // Validar que la fecha esté en formato correcto
+            const datePattern = /^\d{4}-\d{2}-\d{2}$/;
+            if (!datePattern.test(dateStr)) {
+                throw new Error('Formato de fecha inválido');
+            }
+            
+            const updateData = {
+                appointment_date: dateStr, // Enviar como string YYYY-MM-DD
                 appointment_time: time,
                 type: type || 'consultation',
-                status: 'scheduled',
                 notes: notes || '',
-                duration_minutes: duration,
+                duration_minutes: duration_minutes,
+                precio_cita: precio_cita, // Nuevo
                 patient_info: {
                     id: patient.id,
                     name: `${patient.first_name} ${patient.last_name}`,
@@ -290,23 +350,31 @@ class NewAppointmentModal extends HTMLElement {
                 }
             };
 
-            const newAppointment = await appointmentService.default.createAppointment(appointmentData);
 
-            // Despachar evento de éxito
-            this.dispatchEvent(new CustomEvent('appointment-created', {
-                bubbles: true,
-                composed: true,
-                detail: { appointment: newAppointment }
-            }));
+            const updatedAppointment = await appointmentService.default.updateAppointment(
+                this._appointmentId,
+                updateData
+            );
 
+
+            // Cerrar modal primero
             this.close();
+
+            // Despachar evento de éxito después de cerrar el modal
+            // Esto permite que el modal se cierre visualmente antes de recargar
+            setTimeout(() => {
+                this.dispatchEvent(new CustomEvent('appointment-updated', {
+                    bubbles: true,
+                    composed: true,
+                    detail: { appointment: updatedAppointment }
+                }));
+            }, 100);
         } catch (error) {
-            console.error('Error al crear cita:', error);
-            const errorMessage = error.message || 'Error al crear la cita. Por favor, intente nuevamente.';
+            const errorMessage = error.message || 'Error al actualizar la cita. Por favor, intente nuevamente.';
             this.showError(errorMessage);
         } finally {
             submitBtn.disabled = false;
-            submitBtn.textContent = 'Crear Cita';
+            submitBtn.textContent = 'Guardar Cambios';
         }
     }
 
@@ -318,14 +386,22 @@ class NewAppointmentModal extends HTMLElement {
         }
     }
 
-    open() {
+    async open(appointmentId) {
+        this._appointmentId = appointmentId;
         this.style.display = 'flex';
         document.body.style.overflow = 'hidden';
+        
+        // Cargar datos de la cita y formularios
+        await this.loadData();
     }
 
     close() {
         this.style.display = 'none';
         document.body.style.overflow = '';
+        
+        // Limpiar datos
+        this._appointmentId = null;
+        this._appointment = null;
         
         // Limpiar formulario
         const form = this.shadowRoot.querySelector('.appointment-form');
@@ -454,25 +530,13 @@ class NewAppointmentModal extends HTMLElement {
                     border-color: #2196F3;
                 }
 
-                .form-select:disabled {
-                    background: #f5f5f5;
-                    color: #999;
-                    cursor: not-allowed;
-                }
-
                 .form-textarea {
                     resize: vertical;
                     min-height: 80px;
                 }
 
-                .error-message {
-                    display: none;
-                    padding: 12px;
-                    background: #ffebee;
-                    color: #c62828;
-                    border-radius: 6px;
-                    font-size: 14px;
-                    margin-top: 8px;
+                .form-select option:disabled {
+                    color: #999;
                 }
 
                 .modal-footer {
@@ -483,23 +547,15 @@ class NewAppointmentModal extends HTMLElement {
                     border-top: 1px solid #e0e0e0;
                 }
 
-                .btn {
+                .submit-btn,
+                .cancel-btn {
                     padding: 12px 24px;
                     border: none;
                     border-radius: 6px;
                     font-size: 14px;
                     font-weight: 500;
                     cursor: pointer;
-                    transition: all 0.2s;
-                }
-
-                .cancel-btn {
-                    background: #f5f5f5;
-                    color: #333;
-                }
-
-                .cancel-btn:hover {
-                    background: #e0e0e0;
+                    transition: background 0.2s;
                 }
 
                 .submit-btn {
@@ -515,22 +571,42 @@ class NewAppointmentModal extends HTMLElement {
                     background: #ccc;
                     cursor: not-allowed;
                 }
+
+                .cancel-btn {
+                    background: #f5f5f5;
+                    color: #333;
+                }
+
+                .cancel-btn:hover {
+                    background: #e0e0e0;
+                }
+
+                .error-message {
+                    display: none;
+                    padding: 12px;
+                    background: #ffebee;
+                    color: #c62828;
+                    border-radius: 6px;
+                    font-size: 14px;
+                    margin-bottom: 16px;
+                }
             </style>
 
             <div class="modal-overlay"></div>
             <div class="modal-content">
                 <div class="modal-header">
-                    <h2 class="modal-title">Nueva Cita</h2>
-                    <button class="close-btn" type="button">&times;</button>
+                    <h2 class="modal-title">Editar Cita</h2>
+                    <button class="close-btn" aria-label="Cerrar">×</button>
                 </div>
                 <div class="modal-body">
+                    <div class="error-message"></div>
                     <form class="appointment-form">
                         <div class="form-group">
                             <label class="form-label" for="patient-select">
                                 Paciente <span class="required">*</span>
                             </label>
-                            <select class="form-select" id="patient-select" name="patient" required>
-                                <option value="">Cargando pacientes...</option>
+                            <select id="patient-select" name="patient" class="form-select" required>
+                                <option value="">Seleccione un paciente</option>
                             </select>
                         </div>
 
@@ -538,17 +614,24 @@ class NewAppointmentModal extends HTMLElement {
                             <label class="form-label" for="doctor-select">
                                 Doctor <span class="required">*</span>
                             </label>
-                            <select class="form-select" id="doctor-select" name="doctor" required>
-                                <option value="">Cargando doctores...</option>
+                            <select id="doctor-select" name="doctor" class="form-select" required>
+                                <option value="">Seleccione un doctor</option>
                             </select>
+                        </div>
+
+                        <div class="form-group">
+                            <label class="form-label" for="date-input">
+                                Fecha <span class="required">*</span>
+                            </label>
+                            <input type="date" id="date-input" name="date" class="form-input" required>
                         </div>
 
                         <div class="form-group">
                             <label class="form-label" for="time-select">
                                 Hora <span class="required">*</span>
                             </label>
-                            <select class="form-select" id="time-select" name="time" required>
-                                <option value="">Cargando horarios...</option>
+                            <select id="time-select" name="time" class="form-select" required>
+                                <option value="">Seleccione una hora</option>
                             </select>
                         </div>
 
@@ -556,12 +639,16 @@ class NewAppointmentModal extends HTMLElement {
                             <label class="form-label" for="type-select">
                                 Tipo de Cita
                             </label>
-                            <select class="form-select" id="type-select" name="type">
-                                <option value="consultation">Consulta</option>
-                                <option value="cleaning">Limpieza</option>
-                                <option value="treatment">Tratamiento</option>
-                                <option value="follow-up">Seguimiento</option>
-                                <option value="emergency">Emergencia</option>
+                            <select id="type-select" name="type" class="form-select">
+                                <option value="Cambio de Ligas">Cambio de Ligas</option>
+                                <option value="Primera Consulta">Primera Consulta</option>
+                                <option value="Revisión Mensual">Revisión Mensual</option>
+                                <option value="Colocación de Brackets">Colocación de Brackets</option>
+                                <option value="Consulta General">Consulta General</option>
+                                <option value="Retiro de Brackets">Retiro de Brackets</option>
+                                <option value="Tratamiento de Ortodoncia">Tratamiento de Ortodoncia</option>
+                                <option value="Emergencia">Emergencia</option>
+                                <option value="Control Post-Tratamiento">Control Post-Tratamiento</option>
                             </select>
                         </div>
 
@@ -569,8 +656,9 @@ class NewAppointmentModal extends HTMLElement {
                             <label class="form-label" for="duration-select">
                                 Duración (minutos)
                             </label>
-                            <select class="form-select" id="duration-select" name="duration">
+                            <select id="duration-select" name="duration" class="form-select">
                                 <option value="30">30 minutos</option>
+                                <option value="45">45 minutos</option>
                                 <option value="60">60 minutos</option>
                                 <option value="90">90 minutos</option>
                                 <option value="120">120 minutos</option>
@@ -578,28 +666,35 @@ class NewAppointmentModal extends HTMLElement {
                         </div>
 
                         <div class="form-group">
+                            <label class="form-label" for="price-input">
+                                Precio de la Cita ($)
+                            </label>
+                            <input
+                                type="number"
+                                class="form-input"
+                                id="price-input"
+                                name="precio_cita"
+                                min="0"
+                                step="50"
+                            />
+                        </div>
+
+                        <div class="form-group">
                             <label class="form-label" for="notes-textarea">
                                 Notas
                             </label>
-                            <textarea 
-                                class="form-textarea" 
-                                id="notes-textarea" 
-                                name="notes" 
-                                placeholder="Notas adicionales sobre la cita..."
-                            ></textarea>
+                            <textarea id="notes-textarea" name="notes" class="form-textarea" placeholder="Notas adicionales sobre la cita..."></textarea>
                         </div>
-
-                        <div class="error-message"></div>
                     </form>
                 </div>
                 <div class="modal-footer">
-                    <button type="button" class="btn cancel-btn">Cancelar</button>
-                    <button type="button" class="btn submit-btn">Crear Cita</button>
+                    <button type="button" class="cancel-btn" onclick="this.getRootNode().host.close()">Cancelar</button>
+                    <button type="submit" class="submit-btn">Guardar Cambios</button>
                 </div>
             </div>
         `;
     }
 }
 
-customElements.define('new-appointment-modal', NewAppointmentModal);
+customElements.define('edit-appointment-modal', EditAppointmentModal);
 

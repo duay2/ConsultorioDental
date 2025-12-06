@@ -83,7 +83,14 @@ const createAppointment = async (req, res, next) => {
             data: appointment
         });
     } catch (error) {
-        next(error);
+        console.error('[AppointmentController] Error al crear cita:', error);
+        // Enviar un mensaje de error más detallado al cliente
+        res.status(400).json({
+            error: 'Error al crear la cita',
+            message: error.message || 'Hubo un problema al procesar su solicitud.',
+            details: error.stack // Incluir stack trace para depuración avanzada
+        });
+        // No llamar a next(error) aquí si ya estamos enviando una respuesta
     }
 };
 
@@ -144,6 +151,7 @@ const deleteAppointment = async (req, res, next) => {
         }
 
         const appointmentId = parseInt(req.params.id);
+        console.log(`[AppointmentController] Intentando eliminar cita con ID: ${appointmentId}`);
         const appointmentModel = new Appointment();
 
         // Verificar que la cita existe
@@ -206,16 +214,18 @@ const getAppointmentsByDate = async (req, res, next) => {
  * Obtener citas por paciente
  * GET /api/appointments/patient?patient_id=1
  */
-const getAppointmentsByPatient = async (req, res, next) => {
+const getAppointmentsByPatientId = async (req, res, next) => {
     try {
         // Asegurar conexión a la base de datos
         if (!databaseConnection.isConnectionActive()) {
             await databaseConnection.connect();
         }
 
-        const patientId = parseInt(req.query.patient_id);
+        const patientId = parseInt(req.params.id);
+        console.log(`[AppointmentController] Recibida solicitud para citas del paciente con ID: ${patientId}`);
         const appointmentModel = new Appointment();
-        const appointments = await appointmentModel.findByPatient(patientId);
+        const appointments = await appointmentModel.findByPatientId(patientId);
+        console.log(`[AppointmentController] Citas encontradas para paciente ${patientId}: ${appointments.length}`);
 
         res.status(200).json({
             message: 'Citas obtenidas exitosamente',
@@ -281,7 +291,7 @@ module.exports = {
     updateAppointment,
     deleteAppointment,
     getAppointmentsByDate,
-    getAppointmentsByPatient,
+    getAppointmentsByPatientId,
     updateAppointmentStatus
 };
 

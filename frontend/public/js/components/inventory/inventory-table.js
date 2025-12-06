@@ -22,11 +22,8 @@ class InventoryTable extends HTMLElement {
         if (name === 'data-items' && newValue) {
             try {
                 this.items = JSON.parse(newValue);
-                console.log('Inventory table recibió items:', this.items.length);
                 this.updateRows();
             } catch (e) {
-                console.error('Error parsing table data:', e);
-                console.error('Raw data:', newValue);
                 this.items = [];
                 this.updateRows();
             }
@@ -36,18 +33,14 @@ class InventoryTable extends HTMLElement {
     updateRows() {
         const tbody = this.shadowRoot.querySelector('#table-body');
         if (!tbody) {
-            console.error('tbody no encontrado');
             return;
         }
-
-        console.log('Actualizando filas con', this.items.length, 'items');
 
         // Limpiar filas existentes
         tbody.innerHTML = '';
 
         // Crear filas para cada item
         this.items.forEach((item, index) => {
-            console.log(`Creando fila ${index + 1}:`, item);
             const row = document.createElement('inventory-row');
             row.setAttribute('data-item', JSON.stringify(item));
             tbody.appendChild(row);

@@ -36,7 +36,6 @@ class DashboardService {
             const data = await response.json();
             return data.pagination?.total || 0;
         } catch (error) {
-            console.error('Error obteniendo conteo de pacientes:', error);
             return 0;
         }
     }
@@ -63,7 +62,6 @@ class DashboardService {
             const data = await response.json();
             return data.pagination?.total || 0;
         } catch (error) {
-            console.error('Error obteniendo conteo de citas:', error);
             return 0;
         }
     }
@@ -90,7 +88,6 @@ class DashboardService {
             const data = await response.json();
             return data.total || (data.data?.length || 0);
         } catch (error) {
-            console.error('Error obteniendo conteo de registros dentales:', error);
             return 0;
         }
     }
@@ -117,7 +114,6 @@ class DashboardService {
             const data = await response.json();
             return data.pagination?.total || 0;
         } catch (error) {
-            console.error('Error obteniendo conteo de inventario:', error);
             return 0;
         }
     }
@@ -148,7 +144,6 @@ class DashboardService {
 
                 if (!response.ok) {
                     const errorText = await response.text();
-                    console.error('Error response:', errorText);
                     throw new Error(`Error al obtener citas: ${response.status}`);
                 }
 
@@ -168,7 +163,6 @@ class DashboardService {
                 }
             }
 
-            console.log('Total appointments obtenidos:', allAppointments.length);
 
             // Contar por estado
             const statusCounts = {
@@ -186,10 +180,8 @@ class DashboardService {
                 }
             });
 
-            console.log('Conteos finales:', statusCounts);
             return statusCounts;
         } catch (error) {
-            console.error('Error obteniendo appointments por estado:', error);
             return {
                 scheduled: 0,
                 completed: 0,
@@ -219,7 +211,6 @@ class DashboardService {
                 inventory
             };
         } catch (error) {
-            console.error('Error obteniendo conteos del dashboard:', error);
             return {
                 patients: 0,
                 appointments: 0,

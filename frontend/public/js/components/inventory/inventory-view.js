@@ -12,6 +12,7 @@ class InventoryView extends HTMLElement {
         this.currentPage = 1;
         this.itemsPerPage = 10;
         this.currentCategory = 'all';
+        this._confirmationModalInstance = null; // Declarar la instancia del modal de confirmación
     }
 
     static get observedAttributes() {
@@ -20,6 +21,7 @@ class InventoryView extends HTMLElement {
 
     connectedCallback() {
         this.render();
+        this._confirmationModalInstance = this.shadowRoot.querySelector('confirmation-modal'); // Obtener instancia del modal
         this.setupEventListeners();
         // Esperar a que el DOM esté listo antes de cargar datos
         setTimeout(() => {
@@ -33,40 +35,21 @@ class InventoryView extends HTMLElement {
                 this.inventoryData = JSON.parse(newValue);
                 this.applyFilters();
             } catch (e) {
-                console.error('Error parsing inventory data:', e);
+                // Error parsing inventory data
             }
         }
     }
 
     async loadInventoryData() {
         try {
-            console.log('Cargando datos de inventario...');
-            const dashboardService = (await import('../services/dashboard-service.js')).default;
-            const headers = await dashboardService.getAuthHeader();
-            console.log('Headers:', headers);
-            
-            const response = await fetch('http://localhost:3000/api/inventory?page=1&limit=100', {
-                method: 'GET',
-                headers: {
-                    'Content-Type': 'application/json',
-                    ...headers
-                }
-            });
+            const inventoryService = (await import('../../services/inventory-service.js')).default;
+            const response = await inventoryService.getAllInventory(1, 100);
 
-            console.log('Response status:', response.status);
-
-            if (!response.ok) {
-                const errorText = await response.text();
-                console.error('Error response:', errorText);
-                throw new Error(`Error al obtener inventario: ${response.status}`);
-            }
-
-            const data = await response.json();
-            console.log('Datos recibidos:', data);
-            console.log('Items:', data.data);
-            
-            this.inventoryData = data.data || [];
-            console.log('Inventory data asignado:', this.inventoryData.length, 'items');
+            this.inventoryData = (response.data || []).map(item => ({
+                ...item,
+                current_stock: typeof item.current_stock === 'number' ? item.current_stock : parseInt(item.current_stock) || 0,
+                min_stock: typeof item.min_stock === 'number' ? item.min_stock : parseInt(item.min_stock) || 0
+            }));
             
             // Llenar categorías después de obtener datos
             const categories = this.getCategories();
@@ -86,19 +69,16 @@ class InventoryView extends HTMLElement {
             
             this.applyFilters();
         } catch (error) {
-            console.error('Error cargando datos de inventario:', error);
             this.inventoryData = [];
             this.applyFilters();
         }
     }
 
     applyFilters() {
-        this.filteredData = this.currentCategory === 'all' 
+        this.filteredData = this.currentCategory === 'all'
             ? [...this.inventoryData]
             : this.inventoryData.filter(item => item.category === this.currentCategory);
-        
-        console.log('Filtros aplicados. Datos filtrados:', this.filteredData.length);
-        
+
         // Esperar un momento para asegurar que los componentes hijos estén listos
         setTimeout(() => {
             this.updateTable();
@@ -136,6 +116,11 @@ class InventoryView extends HTMLElement {
         this.shadowRoot.addEventListener('product-saved', () => {
             this.loadInventoryData();
         });
+
+        // Eventos de la tabla - eliminar producto
+        this.shadowRoot.addEventListener('delete-inventory-requested', async (e) => {
+            await this.handleDeleteInventory(e.detail);
+        });
     }
 
     handleEditProduct(detail) {
@@ -145,31 +130,39 @@ class InventoryView extends HTMLElement {
         }
     }
 
+    async handleDeleteInventory(detail) {
+        const confirmModal = this._confirmationModalInstance;
+        if (!confirmModal) return;
+
+        const message = `¿Está seguro de que desea eliminar el producto ${detail.itemName}? Esta acción no se puede deshacer.`;
+        const confirmed = await confirmModal.open('Eliminar Producto', message);
+
+        if (confirmed) {
+            try {
+                const inventoryService = (await import('../../services/inventory-service.js')).default;
+                await inventoryService.deleteInventoryItem(detail.itemId); // Corregido: deleteInventoryItem
+                this.loadInventoryData(); // Recargar datos después de la eliminación
+            } catch (error) {
+                console.error('Error al eliminar producto de inventario:', error);
+                // Aquí podrías mostrar un mensaje de error al usuario
+            }
+        }
+    }
+
     updateTable() {
-        console.log('updateTable llamado');
-        console.log('Filtered data:', this.filteredData.length, 'items');
-        
         // Intentar encontrar la tabla, si no existe, esperar un poco más
         let table = this.shadowRoot.querySelector('inventory-table');
         if (!table) {
-            console.warn('Tabla no encontrada, esperando...');
             setTimeout(() => {
                 this.updateTable();
             }, 100);
             return;
         }
-        
+
         const startIndex = (this.currentPage - 1) * this.itemsPerPage;
         const endIndex = startIndex + this.itemsPerPage;
         const pageData = this.filteredData.slice(startIndex, endIndex);
-        
-        console.log('Datos de página:', pageData.length, 'items');
-        console.log('Datos a pasar a la tabla:', pageData);
-        
-        if (pageData.length > 0) {
-            console.log('Primer item de ejemplo:', pageData[0]);
-        }
-        
+
         table.setAttribute('data-items', JSON.stringify(pageData));
 
         // Actualizar paginación
@@ -178,8 +171,6 @@ class InventoryView extends HTMLElement {
             const totalPages = Math.ceil(this.filteredData.length / this.itemsPerPage);
             pagination.setAttribute('current-page', this.currentPage.toString());
             pagination.setAttribute('total-pages', totalPages.toString());
-        } else {
-            console.warn('Paginación no encontrada');
         }
     }
 
@@ -303,6 +294,7 @@ class InventoryView extends HTMLElement {
                     <table-pagination></table-pagination>
                 </div>
                 <inventory-modal></inventory-modal>
+                <confirmation-modal></confirmation-modal> <!-- Nuevo modal de confirmación -->
             </div>
         `;
 
@@ -321,11 +313,12 @@ class InventoryView extends HTMLElement {
 
         // Event listener para producto guardado
         this.shadowRoot.addEventListener('product-saved', (e) => {
-            console.log('Producto guardado, recargando datos...', e.detail);
-            // Esperar un poco para asegurar que el backend haya procesado la actualización
+            // Esperar más tiempo para asegurar que el backend haya procesado la actualización
             setTimeout(() => {
-                this.loadInventoryData();
-            }, 300);
+                this.loadInventoryData().catch(() => {
+                    // Error al recargar datos
+                });
+            }, 500);
         });
     }
 

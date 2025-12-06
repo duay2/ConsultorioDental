@@ -12,7 +12,6 @@ class AppNavbar extends HTMLElement {
     connectedCallback() {
         // Evitar renderizado múltiple
         if (this._isRendered) {
-            console.warn('Navbar ya renderizado, evitando doble render');
             return;
         }
         
@@ -95,6 +94,12 @@ class AppNavbar extends HTMLElement {
                     border-radius: 8px;
                     color: white;
                     font-weight: bold;
+                }
+
+                .logo-icon svg {
+                    width: 20px;
+                    height: 20px;
+                    fill: white;
                 }
 
                 .nav-links {
@@ -189,12 +194,21 @@ class AppNavbar extends HTMLElement {
             <nav class="navbar">
                 <div class="navbar-left">
                     <a href="#" class="logo">
-                        <div class="logo-icon">🦷</div>
-                        <span>DentalFlow</span>
+                        <div class="logo-icon">
+                            <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                                <path d="M12 2C8.13 2 5 5.13 5 9c0 1.74.78 3.3 2.02 4.35L6.5 15v2.5c0 .83.67 1.5 1.5 1.5h.5v1c0 .55.45 1 1 1h1c.55 0 1-.45 1-1v-1h2v1c0 .55.45 1 1 1h1c.55 0 1-.45 1-1v-1h.5c.83 0 1.5-.67 1.5-1.5V15l-.52-1.65C18.22 12.3 19 10.74 19 9c0-3.87-3.13-7-7-7z" fill="currentColor"/>
+                                <circle cx="9" cy="9" r="1" fill="white" opacity="0.8"/>
+                                <circle cx="15" cy="9" r="1" fill="white" opacity="0.8"/>
+                                <path d="M10 12h4" stroke="white" stroke-width="1.5" stroke-linecap="round" opacity="0.6"/>
+                            </svg>
+                        </div>
+                        <span>Dental Suarez</span>
                     </a>
                     <div class="nav-links">
-                        <a href="#" class="nav-link active" data-section="pacientes">Pacientes</a>
-                        <a href="#" class="nav-link" data-section="citas">Citas</a>
+                        <a href="#" class="nav-link" data-section="dashboard">Dashboard</a>
+                        <a href="#" class="nav-link" data-section="pacientes">Pacientes</a>
+                        <a href="#" class="nav-link active" data-section="citas">Agenda Citas</a>
+                        <a href="#" class="nav-link" data-section="citas-gestion">Gestión Citas</a>
                         <a href="#" class="nav-link" data-section="registros">Registros</a>
                         <a href="#" class="nav-link" data-section="inventario">Inventario</a>
                     </div>
@@ -245,11 +259,10 @@ class AppNavbar extends HTMLElement {
         try {
             // Verificar que el shadowRoot esté listo
             if (!this.shadowRoot) {
-                console.warn('Navbar shadowRoot no está listo');
                 return;
             }
             
-            const authService = (await import('../services/auth-service.js')).default;
+            const authService = (await import('../../services/auth-service.js')).default;
             const user = authService.getUser();
             
             if (user) {
@@ -262,7 +275,7 @@ class AppNavbar extends HTMLElement {
                 if (userRoleEl) userRoleEl.textContent = 'No autenticado';
             }
         } catch (error) {
-            console.error('Error loading user info:', error);
+            // Error loading user info
         }
     }
 

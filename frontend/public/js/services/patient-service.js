@@ -1,60 +1,168 @@
 /**
- * Servicio para manejar las operaciones de pacientes con la API
+ * patient-service
+ * Servicio para manejar operaciones de pacientes con la API
  */
+
 const API_BASE_URL = 'http://localhost:3000/api';
 
 class PatientService {
-    constructor() {
-        this.token = this.getToken();
-    }
+    async getAuthHeaders() {
+        // Usar auth-service para obtener el token
+        const authService = await import('./auth-service.js');
+        const token = authService.default.getToken();
 
-    getToken() {
-        return localStorage.getItem('dentalflow_token');
-    }
-
-    getHeaders() {
-        const headers = {
-            'Content-Type': 'application/json'
-        };
-
-        // Obtener token actualizado en cada petición
-        const currentToken = this.getToken();
-        if (currentToken) {
-            headers['Authorization'] = `Bearer ${currentToken}`;
+        if (!token) {
+            throw new Error('No hay token de autenticación. Por favor, inicia sesión.');
         }
 
-        return headers;
+        return {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`
+        };
     }
 
-    /**
-     * Obtener todos los pacientes
-     * @param {number} page - Número de página
-     * @param {number} limit - Límite de resultados
-     * @returns {Promise<Object>} Objeto con pacientes y paginación
-     */
     async getAllPatients(page = 1, limit = 100) {
         try {
+            const headers = await this.getAuthHeaders();
             const response = await fetch(`${API_BASE_URL}/patients?page=${page}&limit=${limit}`, {
                 method: 'GET',
-                headers: this.getHeaders()
+                headers
             });
 
             if (!response.ok) {
-                const errorData = await response.json().catch(() => ({}));
-                const errorMessage = errorData.message || errorData.error || `Error ${response.status}: ${response.statusText}`;
-                throw new Error(errorMessage);
+                const error = await response.json();
+                throw new Error(error.message || 'Error al obtener pacientes');
             }
 
-            const data = await response.json();
-            console.log('Pacientes obtenidos:', data);
-            return data.data || [];
+            const result = await response.json();
+            // Combinar first_name y last_name en un campo name para el frontend
+            return (result.data || []).map(patient => ({
+                ...patient,
+                name: `${patient.first_name || ''} ${patient.last_name || ''}`.trim()
+            }));
         } catch (error) {
-            console.error('Error al obtener pacientes:', error);
+            throw error;
+        }
+    }
+
+    async getPatientById(id) {
+        try {
+            const headers = await this.getAuthHeaders();
+            const response = await fetch(`${API_BASE_URL}/patients/${id}`, {
+                method: 'GET',
+                headers
+            });
+
+            if (!response.ok) {
+                const error = await response.json();
+                throw new Error(error.message || 'Error al obtener el paciente');
+            }
+
+            const result = await response.json();
+            return result.data;
+        } catch (error) {
+            throw error;
+        }
+    }
+
+    async createPatient(patientData) {
+        try {
+            const headers = await this.getAuthHeaders();
+            const response = await fetch(`${API_BASE_URL}/patients`, {
+                method: 'POST',
+                headers,
+                body: JSON.stringify(patientData)
+            });
+
+            if (!response.ok) {
+                const error = await response.json();
+                throw new Error(error.message || 'Error al crear el paciente');
+            }
+
+            const result = await response.json();
+            return result.data;
+        } catch (error) {
+            throw error;
+        }
+    }
+
+    async updatePatient(id, patientData) {
+        try {
+            const headers = await this.getAuthHeaders();
+            const patientId = parseInt(id);
+
+            const response = await fetch(`${API_BASE_URL}/patients/${patientId}`, {
+                method: 'PUT',
+                headers,
+                body: JSON.stringify(patientData)
+            });
+
+            if (!response.ok) {
+                const error = await response.json();
+                throw new Error(error.message || error.error || 'Error al actualizar el paciente');
+            }
+
+            const result = await response.json();
+            return result.data;
+        } catch (error) {
+            throw error;
+        }
+    }
+
+    async deletePatient(id) {
+        try {
+            const headers = await this.getAuthHeaders();
+            const response = await fetch(`${API_BASE_URL}/patients/${id}`, {
+                method: 'DELETE',
+                headers
+            });
+
+            if (!response.ok) {
+                const error = await response.json();
+                throw new Error(error.message || 'Error al eliminar el paciente');
+            }
+
+            // El backend debería devolver 204 (No Content) en una eliminación exitosa
+            if (response.status === 204) {
+                return { success: true, message: 'Paciente eliminado exitosamente' };
+            }
+
+            // Si hay contenido, intentar parsearlo (caso poco probable para DELETE)
+            const contentType = response.headers.get('content-type');
+            if (contentType && contentType.includes('application/json')) {
+                return await response.json();
+            }
+
+            return { success: true, message: 'Paciente eliminado exitosamente' };
+        } catch (error) {
+            throw error;
+        }
+    }
+
+    async searchPatients(searchTerm) {
+        try {
+            const headers = await this.getAuthHeaders();
+            const response = await fetch(`${API_BASE_URL}/patients/search?q=${encodeURIComponent(searchTerm)}`, {
+                method: 'GET',
+                headers
+            });
+
+            if (!response.ok) {
+                const error = await response.json();
+                throw new Error(error.message || 'Error al buscar pacientes');
+            }
+
+            const result = await response.json();
+            // Combinar first_name y last_name en un campo name para el frontend
+            return (result.data || []).map(patient => ({
+                ...patient,
+                name: `${patient.first_name || ''} ${patient.last_name || ''}`.trim()
+            }));
+        } catch (error) {
             throw error;
         }
     }
 }
 
-const patientService = new PatientService();
-export default patientService;
+export default new PatientService();
 

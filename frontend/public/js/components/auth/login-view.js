@@ -47,7 +47,7 @@ class LoginView extends HTMLElement {
 
         try {
             // servicio de autenticación
-            const authService = (await import('../services/auth-service.js')).default;
+            const authService = (await import('../../services/auth-service.js')).default;
             
             await authService.login(email, password);
 
@@ -58,7 +58,6 @@ class LoginView extends HTMLElement {
             }));
 
         } catch (error) {
-            console.error('Error completo:', error);
             let errorMsg = error.message || 'Error al iniciar sesión. Verifica tus credenciales.';
             
             // Mensajes más específicos según el tipo de error
@@ -210,7 +209,7 @@ class LoginView extends HTMLElement {
                 <div class="login-card">
                     <div class="login-header">
                         <div class="logo-container">
-                            <div class="logo-text">DentalFlow</div>
+                            <div class="logo-text">Dental Suarez</div>
                         </div>
                         <h1 class="login-title">Iniciar Sesión</h1>
                         <p class="login-subtitle">Ingresa tus credenciales para continuar</p>

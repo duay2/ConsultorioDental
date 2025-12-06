@@ -30,6 +30,8 @@ class Appointment {
     // Crear una nueva cita
     async create(appointmentData) {
         await this.init();
+        console.log('[Appointment Model] Datos recibidos para crear cita:', appointmentData);
+        
         const nextId = await this.getNextId();
         
         // Asegurar que appointment_date se guarde correctamente
@@ -96,7 +98,9 @@ class Appointment {
             created_at: new Date(),
             patient_info: appointmentData.patient_info,
             doctor_info: appointmentData.doctor_info,
-            duration_minutes: appointmentData.duration_minutes || 30
+            duration_minutes: appointmentData.duration_minutes || 15, // Por defecto 15 minutos
+            precio_cita: appointmentData.precio_cita || 0, // Nuevo campo
+            completed: appointmentData.completed || false // Nuevo campo
         };
         
         console.log(`[Appointment Model] Creando cita:`);
@@ -197,11 +201,27 @@ class Appointment {
     }
 
     // Buscar citas por paciente
-    async findByPatient(patientId) {
+    async findByPatientId(patientId) {
         await this.init();
-        return await this.collection.find({
-            'patient_info.id': parseInt(patientId)
-        }).sort({ appointment_date: -1 }).toArray();
+        console.log(`[Appointment Model] Buscando citas para patient_info.id: ${patientId}`);
+        const appointments = await this.collection.find(
+            { 'patient_info.id': parseInt(patientId) },
+            { projection: { type: 1, appointment_date: 1, notes: 1, precio_cita: 1, status: 1, _id: 0 } }
+        ).sort({ appointment_date: -1 }).toArray();
+        console.log(`[Appointment Model] Encontradas ${appointments.length} citas para paciente ${patientId}.`)
+        if (appointments.length === 0) {
+            console.log('[Appointment Model] No se encontraron citas. Buscando un ejemplo de documentos en la colección...');
+            const sampleDocs = await this.collection.find({}).limit(5).toArray();
+            if (sampleDocs.length > 0) {
+                console.log('[Appointment Model] Primeros 5 documentos de la colección:');
+                sampleDocs.forEach((doc, index) => {
+                    console.log(`  [${index}] id: ${doc.id}, patient_info.id: ${doc.patient_info?.id}, patient_info.name: ${doc.patient_info?.name}, appointment_date: ${doc.appointment_date}`);
+                });
+            } else {
+                console.log('[Appointment Model] La colección de citas está vacía.');
+            }
+        }
+        return appointments;
     }
 
     // Obtener todas las citas con paginación
@@ -245,11 +265,11 @@ class Appointment {
                 console.log(`[Appointment Model] Verificación UTC: ${verifyYear}-${verifyMonth}-${verifyDay}`);
                 
                 if (verifyYear !== year || verifyMonth !== month || verifyDay !== day) {
-                    console.error(`[Appointment Model] ⚠️ ERROR: La fecha UTC no coincide!`);
+                    console.error(`[Appointment Model]  ERROR: La fecha UTC no coincide!`);
                     console.error(`[Appointment Model] Esperada: ${year}-${month}-${day}`);
                     console.error(`[Appointment Model] Obtenida UTC: ${verifyYear}-${verifyMonth}-${verifyDay}`);
                 } else {
-                    console.log(`[Appointment Model] ✅ Fecha UTC correcta: ${verifyYear}-${verifyMonth}-${verifyDay}`);
+                    console.log(`[Appointment Model]  Fecha UTC correcta: ${verifyYear}-${verifyMonth}-${verifyDay}`);
                 }
             } else {
                 throw new Error(`Formato de fecha inválido: ${updateFields.appointment_date}. Debe ser YYYY-MM-DD`);
@@ -303,9 +323,19 @@ class Appointment {
     // Actualizar estado de la cita
     async updateStatus(appointmentId, status) {
         await this.init();
+        
+        const updateFields = { status: status, updated_at: new Date() };
+        
+        // Si el estado es 'completada', marcar la cita como completada
+        if (status === 'completada') {
+            updateFields.completed = true;
+        } else {
+            updateFields.completed = false;
+        }
+        
         return await this.collection.updateOne(
             { id: parseInt(appointmentId) },
-            { $set: { status: status, updated_at: new Date() } }
+            { $set: updateFields }
         );
     }
 

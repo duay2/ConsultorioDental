@@ -52,54 +52,36 @@ class DailyAgendaView extends HTMLElement {
         const month = String(date.getMonth() + 1).padStart(2, '0');
         const day = String(date.getDate()).padStart(2, '0');
         const dateStr = `${year}-${month}-${day}`;
-        console.log('[DailyAgendaView] Fecha formateada para API:', dateStr);
         return dateStr;
     }
 
     async loadAppointments() {
         try {
             // Importar dinámicamente el servicio
-            const appointmentService = await import('../services/appointment-service.js');
+            const appointmentService = await import('../../services/appointment-service.js');
             const dateStr = this.formatDateForAPI(this._currentDate);
             
-            console.log('[DailyAgendaView] Cargando citas para fecha:', dateStr);
             
             // Primero, obtener todas las citas para debugging
             try {
                 const allAppointments = await appointmentService.default.getAllAppointments(1, 100);
-                console.log('[DailyAgendaView] TODAS las citas en la BD:', allAppointments.data || allAppointments);
                 if (allAppointments.data) {
                     allAppointments.data.forEach((apt, idx) => {
-                        console.log(`[DailyAgendaView] Cita ${idx + 1} en BD:`, {
-                            id: apt.id,
-                            date: apt.appointment_date,
-                            time: apt.appointment_time,
-                            patient: apt.patient_info?.name || apt.patient_info
-                        });
+                        // Procesar cita
                     });
                 }
             } catch (err) {
-                console.warn('[DailyAgendaView] No se pudieron obtener todas las citas:', err);
             }
             
             this._appointments = await appointmentService.default.getAppointmentsByDate(dateStr);
-            console.log('[DailyAgendaView] Citas cargadas para fecha específica:', this._appointments);
-            console.log('[DailyAgendaView] Número de citas:', this._appointments.length);
             
             // Log de cada cita para debugging
             this._appointments.forEach((apt, index) => {
-                console.log(`[DailyAgendaView] Cita ${index + 1}:`, {
-                    id: apt.id,
-                    date: apt.appointment_date,
-                    time: apt.appointment_time,
-                    patient: apt.patient_info,
-                    status: apt.status
-                });
+                // Procesar cita
             });
             
             this.renderAppointments();
         } catch (error) {
-            console.error('Error al cargar citas:', error);
             
             // Mostrar error al usuario
             const errorMessage = error.message || 'Error al cargar las citas. Verifique su conexión.';
@@ -107,7 +89,6 @@ class DailyAgendaView extends HTMLElement {
             
             // Usar datos de ejemplo si falla la API (solo para desarrollo)
             if (error.message?.includes('Failed to fetch') || error.message?.includes('NetworkError')) {
-                console.warn('Usando datos de ejemplo debido a error de red');
                 this._appointments = this.getSampleAppointments();
                 this.renderAppointments();
             } else {
@@ -147,16 +128,12 @@ class DailyAgendaView extends HTMLElement {
     renderAppointments() {
         const agendaContainer = this.shadowRoot.querySelector('.agenda-container');
         if (!agendaContainer) {
-            console.warn('[DailyAgendaView] No se encontró el contenedor de agenda');
             return;
         }
 
-        console.log('[DailyAgendaView] Renderizando citas...');
-        console.log('[DailyAgendaView] Total de citas a renderizar:', this._appointments.length);
 
         // Limpiar citas existentes de todos los rows
         const rows = agendaContainer.querySelectorAll('agenda-row');
-        console.log('[DailyAgendaView] Filas encontradas:', rows.length);
         
         rows.forEach(row => {
             if (row.shadowRoot) {
@@ -167,7 +144,6 @@ class DailyAgendaView extends HTMLElement {
                         // Limpiar todas las tarjetas existentes
                         const existingCards = timeSlot.querySelectorAll('appointment-card');
                         existingCards.forEach(card => {
-                            console.log('[DailyAgendaView] Eliminando tarjeta existente:', card.getAttribute('appointment-id'));
                             card.remove();
                         });
                     }
@@ -193,12 +169,10 @@ class DailyAgendaView extends HTMLElement {
                 time = `${parts[0]}:${parts[1]}`;
             }
             
-            console.log(`[DailyAgendaView] Cita ${index + 1} - Buscando fila para hora: "${time}"`);
             
             const row = agendaContainer.querySelector(`agenda-row[time="${time}"]`);
             
             if (!row) {
-                console.warn(`[DailyAgendaView] No se encontró fila para hora "${time}"`);
                 return;
             }
             
@@ -231,19 +205,14 @@ class DailyAgendaView extends HTMLElement {
                         
                         // Asegurar que la tarjeta se agregue correctamente
                         timeSlot.appendChild(card);
-                        console.log(`[DailyAgendaView] Cita ${index + 1} (ID: ${appointment.id}) renderizada en hora ${time} para paciente: ${patientName}`);
                     } else {
-                        console.warn(`[DailyAgendaView] No se encontró time-slot en la fila para hora "${time}"`);
                     }
                 } else {
-                    console.warn(`[DailyAgendaView] No se encontró slot-container en la fila para hora "${time}"`);
                 }
             } else {
-                console.warn(`[DailyAgendaView] La fila para hora "${time}" no tiene shadowRoot`);
             }
         });
         
-        console.log('[DailyAgendaView] Renderizado completado');
     }
 
     setupEventListeners() {
@@ -274,36 +243,20 @@ class DailyAgendaView extends HTMLElement {
             });
         }
 
-        // Escuchar evento de cita creada (desde el modal que está fuera del shadow DOM)
-        document.addEventListener('appointment-created', async (e) => {
-            const { appointment } = e.detail;
-            console.log('[DailyAgendaView] Nueva cita creada:', appointment);
-            
-            // Mostrar confirmación
-            this.showSuccessMessage('Cita creada exitosamente');
-            
-            // Recargar citas
-            await this.loadAppointments();
-        });
-
         // Escuchar evento de edición de cita (desde appointment-card)
         document.addEventListener('appointment-edit', async (e) => {
-            console.log('[DailyAgendaView] Evento appointment-edit recibido:', e.detail);
             const { appointmentId } = e.detail;
             
             if (!appointmentId) {
-                console.error('[DailyAgendaView] ID de cita no proporcionado en el evento');
                 return;
             }
             
-            console.log('[DailyAgendaView] Abriendo modal de edición para cita:', appointmentId);
             this.openEditAppointmentModal(appointmentId);
         });
 
         // Escuchar evento de cita actualizada (desde el modal de edición)
         document.addEventListener('appointment-updated', async (e) => {
             const { appointment } = e.detail;
-            console.log('[DailyAgendaView] Cita actualizada:', appointment);
             
             // Obtener la fecha de la cita actualizada usando UTC
             let appointmentDate;
@@ -328,12 +281,9 @@ class DailyAgendaView extends HTMLElement {
             
             const currentDateStr = this.formatDateForAPI(this._currentDate);
             
-            console.log('[DailyAgendaView] Fecha de cita actualizada:', appointmentDateStr);
-            console.log('[DailyAgendaView] Fecha actual del calendario:', currentDateStr);
             
             // Si la cita cambió de fecha, cambiar la vista al día de la cita
             if (appointmentDateStr && appointmentDateStr !== currentDateStr) {
-                console.log('[DailyAgendaView] La cita cambió de fecha, actualizando vista al día:', appointmentDateStr);
                 
                 // Crear fecha correcta usando UTC para el mensaje y la vista
                 const [year, month, day] = appointmentDateStr.split('-').map(Number);
@@ -362,11 +312,10 @@ class DailyAgendaView extends HTMLElement {
         document.addEventListener('appointment-delete', async (e) => {
             const { appointmentId, patientName, time } = e.detail;
             
-            console.log(`[DailyAgendaView] Eliminando cita ${appointmentId} de ${patientName} a las ${time}`);
             
             // Eliminar la cita del backend
             try {
-                const appointmentService = await import('../services/appointment-service.js');
+                const appointmentService = await import('../../services/appointment-service.js');
                 
                 // Asegurar que appointmentId sea un número
                 const id = parseInt(appointmentId);
@@ -382,7 +331,6 @@ class DailyAgendaView extends HTMLElement {
                 // Recargar citas para actualizar la UI
                 await this.loadAppointments();
             } catch (error) {
-                console.error('[DailyAgendaView] Error al eliminar cita:', error);
                 const errorMessage = error.message || 'Error al eliminar la cita. Por favor, intente nuevamente.';
                 this.showErrorMessage(errorMessage);
             }
@@ -392,7 +340,6 @@ class DailyAgendaView extends HTMLElement {
         document.addEventListener('appointment-rescheduled', async (e) => {
             const { appointmentId, newTime } = e.detail;
             
-            console.log(`[DailyAgendaView] Cita ${appointmentId} reagendada a ${newTime}`);
             
             // Validar que el nuevo horario no esté ocupado
             const isOccupied = await this.isTimeSlotOccupied(newTime);
@@ -404,17 +351,15 @@ class DailyAgendaView extends HTMLElement {
             
             // Actualizar la cita en el backend
             try {
-                const appointmentService = await import('../services/appointment-service.js');
+                const appointmentService = await import('../../services/appointment-service.js');
                 const dateStr = this.formatDateForAPI(this._currentDate);
                 
-                console.log(`[DailyAgendaView] Actualizando cita ${appointmentId} con fecha: ${dateStr}, hora: ${newTime}`);
                 
                 const updatedAppointment = await appointmentService.default.updateAppointment(appointmentId, {
                     appointment_date: dateStr,
                     appointment_time: newTime
                 });
 
-                console.log(`[DailyAgendaView] Cita actualizada en backend:`, updatedAppointment);
 
                 // Mostrar confirmación visual
                 this.showSuccessMessage(`Cita reagendada exitosamente a las ${newTime}`);
@@ -424,7 +369,6 @@ class DailyAgendaView extends HTMLElement {
                     await this.loadAppointments();
                 }, 500);
             } catch (error) {
-                console.error('Error al actualizar cita:', error);
                 const errorMessage = error.message || 'Error al reagendar la cita. Por favor, intente nuevamente.';
                 this.showErrorMessage(errorMessage);
                 
@@ -467,7 +411,6 @@ class DailyAgendaView extends HTMLElement {
         
         // Pasar la fecha como string YYYY-MM-DD directamente
         const dateStr = this.formatDateForAPI(this._currentDate);
-        console.log('[DailyAgendaView] Abriendo modal con fecha:', dateStr, 'fecha actual:', this._currentDate);
         modal.setAttribute('selected-date', dateStr);
         modal.open();
     }
@@ -480,7 +423,6 @@ class DailyAgendaView extends HTMLElement {
             document.body.appendChild(modal);
         }
         
-        console.log('[DailyAgendaView] Abriendo modal de edición para cita:', appointmentId);
         modal.open(appointmentId);
     }
 
@@ -602,6 +544,32 @@ class DailyAgendaView extends HTMLElement {
                     display: flex;
                     align-items: center;
                     gap: 24px;
+                }
+
+                .view-toggle-buttons {
+                    display: flex;
+                    border-radius: 6px;
+                    overflow: hidden;
+                    border: 1px solid #e0e0e0;
+                }
+
+                .view-toggle-button {
+                    background-color: #f0f0f0;
+                    border: none;
+                    padding: 8px 16px;
+                    cursor: pointer;
+                    font-size: 14px;
+                    color: #555;
+                    transition: background-color 0.2s, color 0.2s;
+                }
+
+                .view-toggle-button.active {
+                    background-color: #007bff;
+                    color: white;
+                }
+
+                .view-toggle-button:hover:not(.active) {
+                    background-color: #e0e0e0;
                 }
 
                 .date-navigation {

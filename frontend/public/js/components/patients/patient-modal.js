@@ -1,12 +1,12 @@
 /**
- * inventory-modal
- * Modal para crear o editar un producto de inventario
+ * patient-modal
+ * Modal para crear o editar un paciente
  */
-class InventoryModal extends HTMLElement {
+class PatientModal extends HTMLElement {
     constructor() {
         super();
         this.attachShadow({ mode: 'open' });
-        this._editingProduct = null;
+        this._editingPatient = null;
     }
 
     connectedCallback() {
@@ -14,8 +14,8 @@ class InventoryModal extends HTMLElement {
         this.setupEventListeners();
     }
 
-    open(product = null) {
-        this._editingProduct = product;
+    open(patient = null) {
+        this._editingPatient = patient;
         this.updateForm();
         this.style.display = 'flex';
         document.body.style.overflow = 'hidden';
@@ -24,48 +24,49 @@ class InventoryModal extends HTMLElement {
     close() {
         this.style.display = 'none';
         document.body.style.overflow = '';
-        
+
         // Limpiar formulario
-        const form = this.shadowRoot.querySelector('.product-form');
+        const form = this.shadowRoot.querySelector('.patient-form');
         if (form) form.reset();
-        
+
         const errorMsg = this.shadowRoot.querySelector('.error-message');
         if (errorMsg) {
             errorMsg.textContent = '';
             errorMsg.style.display = 'none';
         }
-        
-        this._editingProduct = null;
+
+        this._editingPatient = null;
     }
 
     updateForm() {
-        const form = this.shadowRoot.querySelector('.product-form');
+        const form = this.shadowRoot.querySelector('.patient-form');
         if (!form) return;
 
-        if (this._editingProduct) {
+        if (this._editingPatient) {
             // Modo edición
-            form.querySelector('#name-input').value = this._editingProduct.name || '';
-            form.querySelector('#category-select').value = this._editingProduct.category || '';
-            form.querySelector('#description-textarea').value = this._editingProduct.description || '';
-            form.querySelector('#current-stock-input').value = this._editingProduct.current_stock || 0;
-            form.querySelector('#min-stock-input').value = this._editingProduct.min_stock || 0;
-            form.querySelector('#cost-input').value = this._editingProduct.cost_per_unit || 0;
-            form.querySelector('#supplier-input').value = this._editingProduct.supplier || '';
-            
+            form.querySelector('#first-name-input').value = this._editingPatient.first_name || '';
+            form.querySelector('#last-name-input').value = this._editingPatient.last_name || '';
+            form.querySelector('#email-input').value = this._editingPatient.email || '';
+            form.querySelector('#phone-input').value = this._editingPatient.phone || '';
+            form.querySelector('#birth-date-input').value = this._editingPatient.birth_date ?
+                new Date(this._editingPatient.birth_date).toISOString().split('T')[0] : '';
+            form.querySelector('#address-input').value = this._editingPatient.address || '';
+            form.querySelector('#medical-history-textarea').value = this._editingPatient.medical_history || '';
+
             const title = this.shadowRoot.querySelector('.modal-title');
-            if (title) title.textContent = 'Editar Producto';
-            
+            if (title) title.textContent = 'Editar Paciente';
+
             const submitBtn = this.shadowRoot.querySelector('.submit-btn');
-            if (submitBtn) submitBtn.textContent = 'Actualizar Producto';
+            if (submitBtn) submitBtn.textContent = 'Actualizar Paciente';
         } else {
             // Modo creación
             form.reset();
-            
+
             const title = this.shadowRoot.querySelector('.modal-title');
-            if (title) title.textContent = 'Nuevo Producto';
-            
+            if (title) title.textContent = 'Nuevo Paciente';
+
             const submitBtn = this.shadowRoot.querySelector('.submit-btn');
-            if (submitBtn) submitBtn.textContent = 'Crear Producto';
+            if (submitBtn) submitBtn.textContent = 'Crear Paciente';
         }
     }
 
@@ -73,7 +74,7 @@ class InventoryModal extends HTMLElement {
         const closeBtn = this.shadowRoot.querySelector('.close-btn');
         const cancelBtn = this.shadowRoot.querySelector('.cancel-btn');
         const submitBtn = this.shadowRoot.querySelector('.submit-btn');
-        const form = this.shadowRoot.querySelector('.product-form');
+        const form = this.shadowRoot.querySelector('.patient-form');
 
         if (closeBtn) {
             closeBtn.addEventListener('click', () => this.close());
@@ -106,71 +107,91 @@ class InventoryModal extends HTMLElement {
     }
 
     async handleSubmit() {
-        const form = this.shadowRoot.querySelector('.product-form');
+        const form = this.shadowRoot.querySelector('.patient-form');
         if (!form) return;
 
         const formData = new FormData(form);
-        const productData = {
-            name: formData.get('name'),
-            category: formData.get('category'),
-            description: formData.get('description') || '',
-            current_stock: parseInt(formData.get('current_stock')) || 0,
-            min_stock: parseInt(formData.get('min_stock')) || 0,
-            cost_per_unit: parseFloat(formData.get('cost_per_unit')) || 0,
-            supplier: formData.get('supplier') || ''
+
+        // Obtener valores y limpiar strings vacíos
+        const getValue = (key) => {
+            const value = formData.get(key);
+            return value && value.trim() !== '' ? value.trim() : null;
         };
 
-        // Validación
-        if (!productData.name || !productData.category) {
-            this.showError('Por favor, complete todos los campos requeridos (Nombre y Categoría).');
+        const firstName = getValue('first_name');
+        const lastName = getValue('last_name');
+        const email = getValue('email');
+        const phone = getValue('phone');
+        const birthDate = getValue('birth_date');
+        const address = getValue('address');
+        const medicalHistory = getValue('medical_history');
+        
+        // Validación de campos requeridos
+        if (!firstName || !lastName || !email || !phone) {
+            this.showError('Por favor, complete todos los campos requeridos (Primer Nombre, Apellido, Email y Teléfono).');
             return;
         }
 
-        if (productData.current_stock < 0 || productData.min_stock < 0) {
-            this.showError('El stock no puede ser negativo.');
+        // Validar email
+        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        if (!emailRegex.test(email)) {
+            this.showError('Por favor, ingrese un email válido.');
             return;
         }
 
-        if (productData.cost_per_unit < 0) {
-            this.showError('El costo no puede ser negativo.');
-            return;
+        // Construir objeto de datos del paciente
+        const patientData = {
+            first_name: firstName,
+            last_name: lastName,
+            email: email,
+            phone: phone
+        };
+        
+        // Solo incluir campos opcionales si tienen valor
+        if (birthDate) {
+            patientData.birth_date = birthDate;
+        }
+        
+        if (address) {
+            patientData.address = address;
+        }
+        
+        if (medicalHistory) {
+            patientData.medical_history = medicalHistory;
         }
 
         const submitBtn = this.shadowRoot.querySelector('.submit-btn');
         const errorMsg = this.shadowRoot.querySelector('.error-message');
-        
+
         try {
             submitBtn.disabled = true;
-            submitBtn.textContent = this._editingProduct ? 'Actualizando...' : 'Creando...';
+            submitBtn.textContent = this._editingPatient ? 'Actualizando...' : 'Creando...';
             if (errorMsg) errorMsg.textContent = '';
 
-            const inventoryService = await import('../services/inventory-service.js');
-            
+            const patientService = await import('../../services/patient-service.js');
+
             let result;
-            if (this._editingProduct) {
-                // Asegurar que el ID sea un número
-                const productId = parseInt(this._editingProduct.id || this._editingProduct._id);
-                console.log('Actualizando producto con ID:', productId, 'Datos:', productData);
-                result = await inventoryService.default.updateInventoryItem(productId, productData);
+            if (this._editingPatient) {
+                const patientId = parseInt(this._editingPatient.id || this._editingPatient._id);
+                result = await patientService.default.updatePatient(patientId, patientData);
             } else {
-                result = await inventoryService.default.createInventoryItem(productData);
+                result = await patientService.default.createPatient(patientData);
             }
 
             // Despachar evento de éxito
-            this.dispatchEvent(new CustomEvent('product-saved', {
+            this.dispatchEvent(new CustomEvent('patient-saved', {
                 bubbles: true,
                 composed: true,
-                detail: { product: result, isEdit: !!this._editingProduct }
+                detail: { patient: result, isEdit: !!this._editingPatient }
             }));
 
             this.close();
         } catch (error) {
-            console.error('Error al guardar producto:', error);
-            const errorMessage = error.message || 'Error al guardar el producto. Por favor, intente nuevamente.';
+            const errorMessage = error.message || 'Error al guardar el paciente. Por favor, intente nuevamente.';
             this.showError(errorMessage);
         } finally {
             submitBtn.disabled = false;
-            submitBtn.textContent = this._editingProduct ? 'Actualizar Producto' : 'Crear Producto';
+            submitBtn.textContent = this._editingPatient ? 'Actualizar Paciente' : 'Crear Paciente';
         }
     }
 
@@ -212,7 +233,7 @@ class InventoryModal extends HTMLElement {
                     background: white;
                     border-radius: 12px;
                     width: 90%;
-                    max-width: 600px;
+                    max-width: 700px;
                     max-height: 90vh;
                     overflow-y: auto;
                     box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
@@ -258,9 +279,9 @@ class InventoryModal extends HTMLElement {
                     padding: 24px;
                 }
 
-                .product-form {
-                    display: flex;
-                    flex-direction: column;
+                .patient-form {
+                    display: grid;
+                    grid-template-columns: 1fr 1fr;
                     gap: 20px;
                 }
 
@@ -268,6 +289,10 @@ class InventoryModal extends HTMLElement {
                     display: flex;
                     flex-direction: column;
                     gap: 8px;
+                }
+
+                .form-group.full-width {
+                    grid-column: 1 / -1;
                 }
 
                 .form-label {
@@ -281,7 +306,6 @@ class InventoryModal extends HTMLElement {
                 }
 
                 .form-input,
-                .form-select,
                 .form-textarea {
                     padding: 12px;
                     border: 1px solid #ddd;
@@ -292,7 +316,6 @@ class InventoryModal extends HTMLElement {
                 }
 
                 .form-input:focus,
-                .form-select:focus,
                 .form-textarea:focus {
                     outline: none;
                     border-color: #2196F3;
@@ -358,106 +381,102 @@ class InventoryModal extends HTMLElement {
             <div class="modal-overlay"></div>
             <div class="modal-content">
                 <div class="modal-header">
-                    <h2 class="modal-title">Nuevo Producto</h2>
+                    <h2 class="modal-title">Nuevo Paciente</h2>
                     <button class="close-btn" type="button">&times;</button>
                 </div>
                 <div class="modal-body">
-                    <form class="product-form">
+                    <form class="patient-form">
                         <div class="form-group">
-                            <label class="form-label" for="name-input">
-                                Nombre del Producto <span class="required">*</span>
+                            <label class="form-label" for="first-name-input">
+                                Primer Nombre <span class="required">*</span>
                             </label>
-                            <input 
-                                type="text" 
-                                class="form-input" 
-                                id="name-input" 
-                                name="name" 
+                            <input
+                                type="text"
+                                class="form-input"
+                                id="first-name-input"
+                                name="first_name"
                                 required
-                                placeholder="Ej: Brackets Metálicos"
+                                placeholder="Luis"
                             />
                         </div>
 
                         <div class="form-group">
-                            <label class="form-label" for="category-select">
-                                Categoría <span class="required">*</span>
+                            <label class="form-label" for="last-name-input">
+                                Apellido <span class="required">*</span>
                             </label>
-                            <select class="form-select" id="category-select" name="category" required>
-                                <option value="">Seleccione una categoría</option>
-                                <option value="Brackets">Brackets</option>
-                                <option value="Materiales">Materiales</option>
-                                <option value="Desechables">Desechables</option>
-                                <option value="Equipos">Equipos</option>
-                                <option value="Instrumentos">Instrumentos</option>
-                                <option value="Otros">Otros</option>
-                            </select>
+                            <input
+                                type="text"
+                                class="form-input"
+                                id="last-name-input"
+                                name="last_name"
+                                required
+                                placeholder="Suarez"
+                            />
                         </div>
 
                         <div class="form-group">
-                            <label class="form-label" for="description-textarea">
-                                Descripción
+                            <label class="form-label" for="email-input">
+                                Email <span class="required">*</span>
                             </label>
-                            <textarea 
-                                class="form-textarea" 
-                                id="description-textarea" 
-                                name="description" 
-                                placeholder="Descripción del producto..."
+                            <input
+                                type="email"
+                                class="form-input"
+                                id="email-input"
+                                name="email"
+                                required
+                                placeholder="luis@gmail.com"
+                            />
+                        </div>
+
+                        <div class="form-group">
+                            <label class="form-label" for="phone-input">
+                                Teléfono <span class="required">*</span>
+                            </label>
+                            <input
+                                type="tel"
+                                class="form-input"
+                                id="phone-input"
+                                name="phone"
+                                required
+                                placeholder="6221478946"
+                            />
+                        </div>
+
+                        <div class="form-group">
+                            <label class="form-label" for="birth-date-input">
+                                Fecha de Nacimiento
+                            </label>
+                            <input
+                                type="date"
+                                class="form-input"
+                                id="birth-date-input"
+                                name="birth_date"
+                            />
+                        </div>
+
+                        <div class="form-group full-width">
+                            <label class="form-label" for="address-input">
+                                Dirección
+                            </label>
+                            <input
+                                type="text"
+                                class="form-input"
+                                id="address-input"
+                                name="address"
+                                placeholder="Calle, número"
+                            />
+                        </div>
+
+                        <div class="form-group full-width">
+                            <label class="form-label" for="medical-history-textarea">
+                                Antecedentes Médicos
+                            </label>
+                            <textarea
+                                class="form-textarea"
+                                id="medical-history-textarea"
+                                name="medical_history"
+                                placeholder="Alergias, enfermedades crónicas..."
                             ></textarea>
-                        </div>
-
-                        <div class="form-group">
-                            <label class="form-label" for="current-stock-input">
-                                Stock Actual
-                            </label>
-                            <input 
-                                type="number" 
-                                class="form-input" 
-                                id="current-stock-input" 
-                                name="current_stock" 
-                                min="0"
-                                value="0"
-                            />
-                        </div>
-
-                        <div class="form-group">
-                            <label class="form-label" for="min-stock-input">
-                                Stock Mínimo
-                            </label>
-                            <input 
-                                type="number" 
-                                class="form-input" 
-                                id="min-stock-input" 
-                                name="min_stock" 
-                                min="0"
-                                value="0"
-                            />
-                        </div>
-
-                        <div class="form-group">
-                            <label class="form-label" for="cost-input">
-                                Costo por Unidad
-                            </label>
-                            <input 
-                                type="number" 
-                                class="form-input" 
-                                id="cost-input" 
-                                name="cost_per_unit" 
-                                min="0"
-                                step="0.01"
-                                value="0"
-                            />
-                        </div>
-
-                        <div class="form-group">
-                            <label class="form-label" for="supplier-input">
-                                Proveedor
-                            </label>
-                            <input 
-                                type="text" 
-                                class="form-input" 
-                                id="supplier-input" 
-                                name="supplier" 
-                                placeholder="Nombre del proveedor"
-                            />
                         </div>
 
                         <div class="error-message"></div>
@@ -465,12 +484,11 @@ class InventoryModal extends HTMLElement {
                 </div>
                 <div class="modal-footer">
                     <button type="button" class="btn cancel-btn">Cancelar</button>
-                    <button type="button" class="btn submit-btn">Crear Producto</button>
+                    <button type="button" class="btn submit-btn">Crear Paciente</button>
                 </div>
             </div>
         `;
     }
 }
 
-customElements.define('inventory-modal', InventoryModal);
-
+customElements.define('patient-modal', PatientModal);

@@ -75,4 +75,14 @@ router.post(
   ctrl.addOrthodonticAdjustment
 );
 
+/**
+ * POST /:id/appointments-history
+ * Agregar cita al historial del paciente.
+ */
+router.post(
+  '/:id/appointments-history',
+  validatePatientIdParam,
+  ctrl.addAppointmentToPatientHistory
+);
+
 module.exports = router;

@@ -8,14 +8,24 @@ const {
     validateAppointmentId,
     validateUpdateStatus,
     validateDate,
-    validatePatientId,
-    validatePagination
+    validatePatientId, // Importar validatePatientId
+    validatePagination,
+    validatePatientIdParam // Importar validatePatientIdParam
 } = require('../middlewares/validation');
 
 /**
  * Rutas para gestión de citas (Appointments)
  * Todas las rutas requieren autenticación JWT
  */
+
+// Ruta para obtener citas por paciente por ID
+// GET /api/appointments/patient/:id
+router.get(
+    '/patient/:id',
+    authenticateToken,
+    validatePatientIdParam,
+    appointmentController.getAppointmentsByPatientId
+);
 
 // Ruta para obtener todas las citas con paginación
 // GET /api/appointments?page=1&limit=10
@@ -33,15 +43,6 @@ router.get(
     authenticateToken,
     validateDate,
     appointmentController.getAppointmentsByDate
-);
-
-// Ruta para obtener citas por paciente
-// GET /api/appointments/patient?patient_id=1
-router.get(
-    '/patient',
-    authenticateToken,
-    validatePatientId,
-    appointmentController.getAppointmentsByPatient
 );
 
 // Ruta para obtener una cita por ID

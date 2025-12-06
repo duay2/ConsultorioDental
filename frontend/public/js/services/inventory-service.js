@@ -36,7 +36,6 @@ class InventoryService {
 
             return await response.json();
         } catch (error) {
-            console.error('Error en getAllInventory:', error);
             throw error;
         }
     }
@@ -57,7 +56,6 @@ class InventoryService {
             const result = await response.json();
             return result.data;
         } catch (error) {
-            console.error('Error en getInventoryById:', error);
             throw error;
         }
     }
@@ -79,7 +77,6 @@ class InventoryService {
             const result = await response.json();
             return result.data;
         } catch (error) {
-            console.error('Error en createInventoryItem:', error);
             throw error;
         }
     }
@@ -89,35 +86,22 @@ class InventoryService {
             const headers = await this.getAuthHeaders();
             // Asegurar que el ID sea un número
             const productId = parseInt(id);
-            console.log('updateInventoryItem - ID:', productId, 'URL:', `${API_BASE_URL}/inventory/${productId}`);
-            console.log('updateInventoryItem - Datos:', itemData);
-            
+
             const response = await fetch(`${API_BASE_URL}/inventory/${productId}`, {
                 method: 'PUT',
                 headers,
                 body: JSON.stringify(itemData)
             });
 
-            console.log('updateInventoryItem - Response status:', response.status);
-
             if (!response.ok) {
                 const error = await response.json();
-                console.error('updateInventoryItem - Error response:', error);
                 throw new Error(error.message || error.error || 'Error al actualizar el producto');
             }
 
             const result = await response.json();
-            console.log('updateInventoryItem - Success:', result);
-            console.log('updateInventoryItem - Updated data:', result.data);
-            
-            // Verificar que los datos se actualizaron correctamente
-            if (result.data) {
-                console.log('updateInventoryItem - Stock actualizado:', result.data.current_stock);
-            }
             
             return result.data;
         } catch (error) {
-            console.error('Error en updateInventoryItem:', error);
             throw error;
         }
     }
@@ -135,9 +119,19 @@ class InventoryService {
                 throw new Error(error.message || 'Error al eliminar el producto');
             }
 
-            return await response.json();
+            // El backend debería devolver 204 (No Content) en una eliminación exitosa
+            if (response.status === 204) {
+                return { success: true, message: 'Producto de inventario eliminado exitosamente' };
+            }
+
+            // Si hay contenido, intentar parsearlo (caso poco probable para DELETE)
+            const contentType = response.headers.get('content-type');
+            if (contentType && contentType.includes('application/json')) {
+                return await response.json();
+            }
+
+            return { success: true, message: 'Producto de inventario eliminado exitosamente' };
         } catch (error) {
-            console.error('Error en deleteInventoryItem:', error);
             throw error;
         }
     }

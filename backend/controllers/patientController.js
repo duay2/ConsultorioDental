@@ -9,7 +9,7 @@ const databaseConnection = require('../config/database');
 const pick = (obj, keys) =>
   Object.fromEntries(Object.entries(obj || {}).filter(([k]) => keys.includes(k)));
 
-const allowed = ['first_name', 'last_name', 'email', 'phone', 'birth_date', 'address', 'insurance', 'orthodontics'];
+const allowed = ['first_name', 'last_name', 'email', 'phone', 'birth_date', 'address', 'medical_history', 'insurance', 'orthodontics'];
 
 // GET /api/patients?page=&limit=
 async function getAllPatients(req, res, next) {
@@ -64,6 +64,10 @@ async function createPatient(req, res, next) {
     if (!databaseConnection.isConnectionActive()) await databaseConnection.connect();
     const model = new Patient();
     const data = pick(req.body, allowed);
+
+    // Inicializar historial de citas vacío
+    data.appointment_history = [];
+
     const created = await model.create(data);
     res.status(201).json({ message: 'Paciente creado', data: created });
   } catch (e) {
@@ -88,6 +92,7 @@ async function updatePatient(req, res, next) {
     }
 
     const data = pick(req.body, allowed);
+
     const r = await model.update(id, data);
     if (!r.modifiedCount) return res.status(400).json({ error: 'No se actualizó' });
 
@@ -99,12 +104,21 @@ async function updatePatient(req, res, next) {
 // DELETE /api/patients/:id
 async function deletePatient(req, res, next) {
   try {
-    if (!databaseConnection.isConnectionActive()) await databaseConnection.connect();
+    console.log(`[PatientController] Intentando eliminar paciente con ID: ${req.params.id}`);
+    if (!databaseConnection.isConnectionActive()) {
+      console.log('[PatientController] Conectando a la base de datos...');
+      await databaseConnection.connect();
+      console.log('[PatientController] Conexión a la base de datos exitosa.');
+    }
     const model = new Patient();
-    const r = await model.delete(+req.params.id);
+    const r = await model.deletePatient(+req.params.id); // Usar deletePatient
+    console.log('[PatientController] Resultado de la eliminación del modelo:', r);
     if (!r.deletedCount) return res.status(404).json({ error: 'No encontrado' });
     res.status(204).send();
-  } catch (e) { next(e); }
+  } catch (e) {
+    console.error('[PatientController] Error al eliminar paciente:', e);
+    next(e);
+  }
 }
 
 // POST /api/patients/:id/orthodontics/adjustments
@@ -119,6 +133,27 @@ async function addOrthodonticAdjustment(req, res, next) {
   } catch (e) { next(e); }
 }
 
+// POST /api/patients/:id/appointments-history
+async function addAppointmentToPatientHistory(req, res, next) {
+  try {
+    if (!databaseConnection.isConnectionActive()) await databaseConnection.connect();
+    const model = new Patient();
+    const patientId = +req.params.id;
+    const { appointmentId } = req.body;
+
+    if (!appointmentId) {
+      return res.status(400).json({ error: 'ID de cita es requerido.' });
+    }
+
+    const r = await model.addAppointmentToHistory(patientId, appointmentId);
+    if (!r.modifiedCount) {
+      return res.status(400).json({ error: 'No se pudo agregar la cita al historial.' });
+    }
+    const updatedPatient = await model.findById(patientId);
+    res.status(200).json({ message: 'Cita agregada al historial del paciente', data: updatedPatient.appointment_history });
+  } catch (e) { next(e); }
+}
+
 module.exports = {
   getAllPatients,
   getPatientById,
@@ -127,5 +162,6 @@ module.exports = {
   createPatient,
   updatePatient,
   deletePatient,
-  addOrthodonticAdjustment
+  addOrthodonticAdjustment,
+  addAppointmentToPatientHistory
 };
