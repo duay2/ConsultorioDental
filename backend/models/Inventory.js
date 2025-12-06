@@ -82,10 +82,30 @@ class Inventory {
     // Actualizar datos del item
     async update(itemId, updateData) {
         await this.init();
-        return await this.collection.updateOne(
-            { id: parseInt(itemId) },
-            { $set: { ...updateData, updated_at: new Date() } }
+        const parsedId = parseInt(itemId);
+        console.log('[Inventory.update] ItemId:', parsedId, 'UpdateData:', updateData);
+        console.log('[Inventory.update] current_stock value:', updateData.current_stock);
+        console.log('[Inventory.update] current_stock type:', typeof updateData.current_stock);
+        
+        // Asegurar que current_stock sea un número si está presente
+        if (updateData.current_stock !== undefined) {
+            updateData.current_stock = parseInt(updateData.current_stock);
+        }
+        
+        const updateQuery = { $set: { ...updateData, updated_at: new Date() } };
+        console.log('[Inventory.update] Update query:', JSON.stringify(updateQuery, null, 2));
+        
+        const result = await this.collection.updateOne(
+            { id: parsedId },
+            updateQuery
         );
+        
+        console.log('[Inventory.update] Result:', {
+            matchedCount: result.matchedCount,
+            modifiedCount: result.modifiedCount
+        });
+        
+        return result;
     }
 
     // Ajustar stock del item

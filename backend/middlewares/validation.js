@@ -535,6 +535,9 @@ const validateUpdateInventory = [
         .optional()
         .isString().withMessage('La descripción debe ser una cadena de texto')
         .trim(),
+    body('current_stock')
+        .optional()
+        .isInt({ min: 0 }).withMessage('El stock actual debe ser un número entero no negativo'),
     body('min_stock')
         .optional()
         .isInt({ min: 0 }).withMessage('El stock mínimo debe ser un número entero no negativo'),
