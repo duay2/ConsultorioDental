@@ -10,6 +10,11 @@ import './components/dashboard-view.js';
 import './components/kpi-card.js';
 import './components/activity-feed.js';
 import './components/chart-panel.js';
+import './components/inventory-view.js';
+import './components/inventory-table.js';
+import './components/inventory-row.js';
+import './components/table-pagination.js';
+import './components/inventory-modal.js';
 import authService from './services/auth-service.js';
 
 // Variable para evitar múltiples inicializaciones
@@ -160,7 +165,22 @@ function setupEventListeners() {
     // Usar delegación de eventos para manejar navbars que se crean dinámicamente
     document.body.addEventListener('navigate', (e) => {
         console.log('Navegar a:', e.detail.section);
-        // Aquí se puede implementar el enrutamiento
+        const appRoot = document.getElementById('app-root') || document.body;
+        
+        // Enrutamiento básico
+        switch (e.detail.section) {
+            case 'inventario':
+                appRoot.innerHTML = '<inventory-view></inventory-view>';
+                break;
+            case 'pacientes':
+            case 'citas':
+            case 'registros':
+                // Por ahora volver al dashboard
+                showDashboard(appRoot);
+                break;
+            default:
+                showDashboard(appRoot);
+        }
     });
 
     document.body.addEventListener('logout', async () => {

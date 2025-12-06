@@ -123,19 +123,6 @@ class LoginView extends HTMLElement {
                     margin-bottom: 1rem;
                 }
 
-                .logo-icon {
-                    width: 48px;
-                    height: 48px;
-                    display: flex;
-                    align-items: center;
-                    justify-content: center;
-                    background: linear-gradient(135deg, #4CAF50 0%, #2E7D32 100%);
-                    border-radius: 12px;
-                    color: white;
-                    font-size: 1.5rem;
-                    font-weight: bold;
-                }
-
                 .logo-text {
                     font-size: 2rem;
                     font-weight: 700;
@@ -264,4 +251,3 @@ class LoginView extends HTMLElement {
 }
 
 customElements.define('login-view', LoginView);
-

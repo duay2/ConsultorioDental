@@ -37,17 +37,14 @@ class ActivityFeed extends HTMLElement {
     getDefaultActivities() {
         return [
             {
-                icon: 'person',
                 timestamp: 'Hace 10m',
                 description: 'Dr. Suárez completó registro de paciente María L.'
             },
             {
-                icon: 'clock',
                 timestamp: 'Hace 1h',
                 description: 'Nuevo inventario de guantes añadido.'
             },
             {
-                icon: 'clock',
                 timestamp: 'Hace 2h',
                 description: 'Cita de Pedro S. confirmada.'
             }
@@ -132,4 +129,3 @@ class ActivityFeed extends HTMLElement {
 }
 
 customElements.define('activity-feed', ActivityFeed);
-

@@ -142,4 +142,3 @@ class KpiCard extends HTMLElement {
 }
 
 customElements.define('kpi-card', KpiCard);
-
