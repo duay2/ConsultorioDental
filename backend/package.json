@@ -5,7 +5,7 @@
   "main": "server.js",
   "scripts": {
     "start": "node server.js",
-    "dev": "nodemon server.js"
+    "dev": "node server.js"
   },
   "keywords": [
     "dental",
@@ -21,7 +21,8 @@
     "express": "^5.1.0",
     "express-validator": "^7.0.1",
     "jsonwebtoken": "^9.0.2",
-    "mongodb": "^6.3.0"
+    "mongodb": "^6.3.0",
+    "morgan": "^1.10.1"
   },
   "devDependencies": {
     "nodemon": "^3.0.2"
