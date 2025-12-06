@@ -1,5 +1,7 @@
 const express = require('express');
 const cors = require('cors');
+const path = require('path');
+const morgan = require('morgan'); // Importar morgan para logging HTTP
 require('dotenv').config();
 
 // Importar conexión a base de datos
@@ -8,8 +10,8 @@ const databaseConnection = require('./config/database');
 // Importar rutas
 const appointmentRoutes = require('./routes/appointment');
 const authRoutes = require('./routes/auth');
-const userRoutes = require('./routes/user');
-const dentalRecordsRoutes = require('./routes/dentalRecordsRoutes');
+const dentalRecordsRoutes = require('./routes/dental-recordsRoutes');
+const inventoryRoutes = require('./routes/inventory');
 const patientRoutes = require('./routes/patient');
 
 // Importar middleware de manejo de errores
@@ -22,6 +24,10 @@ const app = express();
 app.use(cors()); // Habilitar CORS
 app.use(express.json()); // Parsear JSON en el body
 app.use(express.urlencoded({ extended: true })); // Parsear URL-encoded
+app.use(morgan('dev')); // Añadir logging HTTP con morgan
+
+// // Servir archivos estáticos del frontend (comentado, ahora se servirá por separado)
+// app.use(express.static(path.join(__dirname, '..', 'frontend', 'public')));
 
 // Health check endpoint (no requiere autenticación)
 app.get('/health', (req, res) => {
@@ -38,11 +44,11 @@ app.use('/api/auth', authRoutes);
 // Rutas de appointments (requieren JWT)
 app.use('/api/appointments', appointmentRoutes);
 
-// Rutas de users (requieren JWT)
-app.use('/api/users', userRoutes);
-
 // Rutas de dental records (requieren JWT)
 app.use('/api/dental-records', dentalRecordsRoutes);
+
+// Rutas de inventory (requieren JWT)
+app.use('/api/inventory', inventoryRoutes);
 
 // Rutas de patients (requieren JWT)
 app.use('/api/patients', patientRoutes);
@@ -64,29 +70,21 @@ app.use((req, res) => {
             'PUT /api/appointments/:id',
             'PATCH /api/appointments/:id/status',
             'DELETE /api/appointments/:id',
-            'GET /api/users',
-            'GET /api/users/:id',
-            'GET /api/users/email?email=xxx@xxx.com',
-            'GET /api/users/role?role=doctor',
-            'GET /api/users/search?name=Juan',
-            'POST /api/users',
-            'PUT /api/users/:id',
-            'DELETE /api/users/:id',
-            'GET /api/dentalrecords',
-            'GET /api/dentalrecords/:id',
-            'GET /api/dentalrecords/patient?patient_id=N',
-            'POST /api/dentalrecords',
-            'PUT /api/dentalrecords/:id',
-            'PATCH /api/dentalrecords/:id',
-            'DELETE /api/dentalrecords/:id',
-            'GET /api/patients',
-            'GET /api/patients/:id',
-            'GET /api/patients/search?q=nombre',
-            'GET /api/patients/email?email=xxx@xxx.com',
-            'POST /api/patients',
-            'PUT /api/patients/:id',
-            'DELETE /api/patients/:id',
-            'POST /api/patients/:id/orthodontics/adjustments'
+            'GET /api/dental-records',
+            'GET /api/dental-records/:id',
+            'GET /api/dental-records/patient?patient_id=N',
+            'POST /api/dental-records',
+            'PUT /api/dental-records/:id',
+            'PATCH /api/dental-records/:id',
+            'DELETE /api/dental-records/:id',
+            'GET /api/inventory',
+            'GET /api/inventory/:id',
+            'GET /api/inventory/category?category=X',
+            'GET /api/inventory/search?name=X',
+            'POST /api/inventory',
+            'PUT /api/inventory/:id',
+            'PATCH /api/inventory/:id/stock',
+            'DELETE /api/inventory/:id'
         ]
     });
 });
@@ -114,11 +112,11 @@ async function startServer() {
             console.log(`Health check: http://localhost:${PORT}/health`);
             console.log(`Login: POST http://localhost:${PORT}/api/auth/login`);
             console.log(`Appointments: http://localhost:${PORT}/api/appointments`);
-            console.log(`Users: http://localhost:${PORT}/api/users`);
-            console.log(`Dental Records: http://localhost:${PORT}/api/dentalrecords`);
+            console.log(`Dental Records: http://localhost:${PORT}/api/dental-records`);
+            console.log(`Inventory: http://localhost:${PORT}/api/inventory`);
             console.log(`Patients: http://localhost:${PORT}/api/patients`);
             console.log('='.repeat(60));
-            console.log('NOTA: Todas las rutas requieren autenticación JWT');
+            console.log('NOTA: Todas las rutas de API requieren autenticación JWT, excepto /api/auth/register y /api/auth/login');
             console.log('='.repeat(60));
         });
     } catch (error) {

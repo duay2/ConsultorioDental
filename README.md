@@ -1,5 +1,23 @@
 # Sistema REST API - Consultorio Dental
 
+APP FULLSTACK
+## 1. Instalar dependencias
+En la raiz del proyecto 
+```bash
+npm install
+```
+```bash
+npm install -g serve
+```
+cd backend
+```bash
+npm install
+```
+## 2. Ejecución de Backend y Frontend
+```bash
+npm start
+```
+
 API REST para gestión de consultorio dental.
 
 ## 1. Instalar dependencias
