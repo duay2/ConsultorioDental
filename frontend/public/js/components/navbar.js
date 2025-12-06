@@ -39,7 +39,8 @@ class AppNavbar extends HTMLElement {
             const roleMap = {
                 'admin': 'Administrador',
                 'doctor': 'Dentista',
-                'assistant': 'Asistente'
+                'assistant': 'Asistente',
+                'Dentista': 'Dentista'
             };
             userRoleEl.textContent = roleMap[user.role] || user.role || 'Usuario';
         }
@@ -148,6 +149,8 @@ class AppNavbar extends HTMLElement {
                 .user-details {
                     display: flex;
                     flex-direction: column;
+                    gap: 0;
+                    line-height: 1.2;
                 }
 
                 .user-name {
@@ -186,6 +189,7 @@ class AppNavbar extends HTMLElement {
             <nav class="navbar">
                 <div class="navbar-left">
                     <a href="#" class="logo">
+                        <div class="logo-icon">🦷</div>
                         <span>DentalFlow</span>
                     </a>
                     <div class="nav-links">
@@ -215,12 +219,8 @@ class AppNavbar extends HTMLElement {
             </nav>
         `;
 
+        this.shadowRoot.innerHTML = '';
         this.shadowRoot.appendChild(template.content.cloneNode(true));
-
-        this.shadowRoot.appendChild(template.content.cloneNode(true));
-
-        // Cargar datos del usuario si está autenticado
-        this.loadUserInfo();
 
         // Event listeners
         this.shadowRoot.querySelector('.logout-btn').addEventListener('click', () => {
@@ -277,4 +277,3 @@ class AppNavbar extends HTMLElement {
 }
 
 customElements.define('app-navbar', AppNavbar);
-
