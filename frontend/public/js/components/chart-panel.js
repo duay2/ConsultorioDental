@@ -8,12 +8,60 @@ class ChartPanel extends HTMLElement {
         super();
         this.attachShadow({ mode: 'open' });
         this.chart = null;
+        this.statusData = null;
+    }
+
+    static get observedAttributes() {
+        return ['status-data'];
     }
 
     connectedCallback() {
         this.loadChartLibrary().then(() => {
             this.render();
+            // Esperar a que el DOM esté listo y Chart.js esté cargado
+            setTimeout(() => {
+                // Crear gráfico inicial con datos por defecto
+                if (window.Chart) {
+                    this.createChart();
+                    // Luego cargar datos reales
+                    this.loadAppointmentData();
+                } else {
+                    console.error('Chart.js no está disponible');
+                }
+            }, 200);
+        }).catch(error => {
+            console.error('Error cargando Chart.js:', error);
         });
+    }
+
+    attributeChangedCallback(name, oldValue, newValue) {
+        if (name === 'status-data' && newValue && this.chart) {
+            try {
+                const data = JSON.parse(newValue);
+                this.updateChart(data);
+            } catch (e) {
+                console.error('Error parsing status data:', e);
+            }
+        }
+    }
+
+    async loadAppointmentData() {
+        try {
+            const dashboardService = (await import('../services/dashboard-service.js')).default;
+            const statusCounts = await dashboardService.getAppointmentsByStatus();
+            this.statusData = statusCounts;
+            
+            // Actualizar el gráfico existente con los datos reales
+            if (this.chart) {
+                this.updateChartData(statusCounts);
+            } else {
+                // Si el gráfico no existe aún, crearlo
+                this.createChart(statusCounts);
+            }
+        } catch (error) {
+            console.error('Error cargando datos de appointments:', error);
+            // Si hay error, mantener los datos por defecto
+        }
     }
 
     loadChartLibrary() {
@@ -108,14 +156,14 @@ class ChartPanel extends HTMLElement {
                 <div class="chart-container">
                     <canvas id="appointmentChart"></canvas>
                 </div>
-                <div class="chart-legend">
+                <div class="chart-legend" id="chart-legend">
                     <div class="legend-item">
                         <div class="legend-color" style="background: #4A90E2;"></div>
                         <span>Programadas</span>
                     </div>
                     <div class="legend-item">
                         <div class="legend-color" style="background: #4CAF50;"></div>
-                        <span>Confirmadas</span>
+                        <span>Completadas</span>
                     </div>
                 </div>
             </div>
@@ -123,50 +171,100 @@ class ChartPanel extends HTMLElement {
 
         this.shadowRoot.innerHTML = '';
         this.shadowRoot.appendChild(template.content.cloneNode(true));
-
-        // Crear gráfico después de que el DOM esté listo
-        setTimeout(() => {
-            this.createChart();
-        }, 100);
     }
 
-    createChart() {
+    createChart(data = null) {
         const canvas = this.shadowRoot.querySelector('#appointmentChart');
-        if (!canvas || !window.Chart) return;
+        if (!canvas) {
+            console.error('Canvas no encontrado');
+            return;
+        }
+        
+        if (!window.Chart) {
+            console.error('Chart.js no está disponible');
+            return;
+        }
 
         const ctx = canvas.getContext('2d');
 
-        // Datos basados en la citas programadas y confirmadas
-        const data = {
-            labels: ['Programadas', 'Confirmadas'],
+        // Si no hay datos, usar valores por defecto
+        const statusCounts = data || this.statusData || {
+            scheduled: 0,
+            completed: 0
+        };
+
+        console.log('Creando gráfico con datos:', statusCounts);
+
+        // Preparar datos para la gráfica (solo programadas y completadas)
+        const scheduledCount = statusCounts.scheduled || 0;
+        const completedCount = statusCounts.completed || 0;
+        
+        const chartData = {
+            labels: ['Programadas', 'Completadas'],
             datasets: [{
-                data: [3, 1], 
+                data: [scheduledCount, completedCount],
                 backgroundColor: ['#4A90E2', '#4CAF50'],
                 borderWidth: 0,
                 cutout: '60%'
             }]
         };
 
-        this.chart = new Chart(ctx, {
-            type: 'doughnut',
-            data: data,
-            options: {
-                responsive: true,
-                maintainAspectRatio: false,
-                animation: {
-                    animateRotate: false,
-                    animateScale: false
-                },
-                plugins: {
-                    legend: {
-                        display: false
+        console.log('Datos del gráfico:', chartData);
+
+        // Si ya existe un gráfico, destruirlo primero
+        if (this.chart) {
+            this.chart.destroy();
+            this.chart = null;
+        }
+
+        // Crear nuevo gráfico
+        try {
+            this.chart = new Chart(ctx, {
+                type: 'doughnut',
+                data: chartData,
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    animation: {
+                        animateRotate: false,
+                        animateScale: false
                     },
-                    tooltip: {
-                        enabled: true
+                    plugins: {
+                        legend: {
+                            display: false
+                        },
+                        tooltip: {
+                            enabled: true,
+                            callbacks: {
+                                label: function(context) {
+                                    const label = context.label || '';
+                                    const value = context.parsed || 0;
+                                    const total = context.dataset.data.reduce((a, b) => a + b, 0);
+                                    const percentage = total > 0 ? ((value / total) * 100).toFixed(1) : 0;
+                                    return `${label}: ${value} (${percentage}%)`;
+                                }
+                            }
+                        }
                     }
                 }
-            }
-        });
+            });
+            console.log('Gráfico creado exitosamente');
+        } catch (error) {
+            console.error('Error al crear el gráfico:', error);
+        }
+    }
+
+    updateChartData(statusCounts) {
+        if (!this.chart || !statusCounts) return;
+
+        // Actualizar los datos del gráfico existente (solo programadas y completadas)
+        this.chart.data.datasets[0].data = [
+            statusCounts.scheduled || 0,
+            statusCounts.completed || 0
+        ];
+
+        // Actualizar sin animación
+        this.chart.update('none');
     }
 }
 

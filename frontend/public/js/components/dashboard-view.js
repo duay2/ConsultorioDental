@@ -11,6 +11,7 @@ class DashboardView extends HTMLElement {
     connectedCallback() {
         this.render();
         this.loadUserInfo();
+        this.loadDashboardData();
     }
 
     getFormattedDate() {
@@ -42,6 +43,29 @@ class DashboardView extends HTMLElement {
         if (welcomeTextEl && user.name) {
             const rolePrefix = user.role === 'doctor' || user.role === 'Dentista' ? 'Dr.' : '';
             welcomeTextEl.textContent = `Bienvenido, ${rolePrefix} ${user.name}`.trim();
+        }
+    }
+
+    async loadDashboardData() {
+        try {
+            const dashboardService = (await import('../services/dashboard-service.js')).default;
+            const counts = await dashboardService.getAllCounts();
+
+            // Actualizar los valores de las tarjetas KPI
+            this.updateKPICard('patients', counts.patients);
+            this.updateKPICard('appointments', counts.appointments);
+            this.updateKPICard('records', counts.records);
+            this.updateKPICard('inventory', counts.inventory);
+        } catch (error) {
+            console.error('Error cargando datos del dashboard:', error);
+            // En caso de error, mantener valores por defecto
+        }
+    }
+
+    updateKPICard(type, value) {
+        const card = this.shadowRoot.querySelector(`kpi-card[icon-type="${type}"]`);
+        if (card) {
+            card.setAttribute('value', value.toString());
         }
     }
 
@@ -129,25 +153,25 @@ class DashboardView extends HTMLElement {
                 <div class="kpi-grid">
                     <kpi-card 
                         icon-type="patients" 
-                        value="3" 
+                        value="0" 
                         label="Pacientes"
                         color="#4A90E2">
                     </kpi-card>
                     <kpi-card 
                         icon-type="appointments" 
-                        value="4" 
+                        value="0" 
                         label="Citas"
                         color="#4CAF50">
                     </kpi-card>
                     <kpi-card 
                         icon-type="records" 
-                        value="3" 
+                        value="0" 
                         label="Registros"
                         color="#4A90E2">
                     </kpi-card>
                     <kpi-card 
                         icon-type="inventory" 
-                        value="3" 
+                        value="0" 
                         label="Inventario"
                         color="#4CAF50">
                     </kpi-card>
