@@ -64,6 +64,33 @@ class AppointmentService {
     }
 
     /**
+ * Obtiene las citas programadas para un paciente específico.
+ * @param {number} patientId - El ID numérico del paciente.
+ */
+async getAppointmentsByPatientId(patientId) {
+    try {
+        const response = await fetch(`/api/appointments/patient?patient_id=${patientId}`, {
+            method: 'GET',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${localStorage.getItem('token')}`
+            },
+        });
+
+        if (!response.ok) {
+            const errorData = await response.json();
+            throw new Error(errorData.message || 'Error al obtener las citas del paciente');
+        }
+
+        const data = await response.json();
+        return data.data; // Retorna el array de citas
+    } catch (error) {
+        console.error("Error en getAppointmentsByPatientId:", error);
+        throw error;
+    }
+}
+
+    /**
      * Obtener una cita por ID
      * @param {number} appointmentId - ID de la cita
      * @returns {Promise<Object>} Datos de la cita

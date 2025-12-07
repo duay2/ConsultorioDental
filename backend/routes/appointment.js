@@ -17,6 +17,8 @@ const {
  * Todas las rutas requieren autenticación JWT
  */
 
+router.get('/patient', appointmentController.getAppointmentsByPatient);
+
 // Ruta para obtener todas las citas con paginación
 // GET /api/appointments?page=1&limit=10
 router.get(
