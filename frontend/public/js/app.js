@@ -34,6 +34,10 @@ import './components/appointments/appointment-table.js'; // Nuevo import
 import './components/appointments/appointment-row.js'; // Nuevo import
 import './components/appointments/appointments-view.js'; // Nuevo import
 import './components/common/confirmation-modal.js'; // Nuevo import para el modal de confirmación
+import './components/users/user-view.js';
+import './components/users/user-table.js';
+import './components/users/user-row.js';
+import './components/users/user-modal.js';
 import authService from './services/auth-service.js';
 
 // Variable para evitar múltiples inicializaciones
@@ -275,6 +279,9 @@ function setupEventListeners() {
             case 'registros':
                 showDentalRecords(appRoot);
                 break;
+            case 'usuarios':
+                showUsers(appRoot);
+                break;
             default:
                 showDashboard(appRoot);
         }
@@ -288,6 +295,25 @@ function setupEventListeners() {
         const appRoot = document.getElementById('app-root') || document.body;
         showLogin(appRoot);
     });
+}
+
+/**
+ * Muestra la vista de usuarios
+ */
+function showUsers(container) {
+    const appRoot = document.getElementById('app-root') || container;
+    appRoot.innerHTML = '<user-view></user-view>';
+
+    // Actualizar navbar para marcar "Usuarios" como activo
+    const navbar = document.querySelector('app-navbar');
+    if (navbar && navbar.shadowRoot) {
+        const usuariosLink = navbar.shadowRoot.querySelector('[data-section="usuarios"]');
+        const allLinks = navbar.shadowRoot.querySelectorAll('.nav-link');
+        allLinks.forEach(link => link.classList.remove('active'));
+        if (usuariosLink) {
+            usuariosLink.classList.add('active');
+        }
+    }
 }
 
 function showAppointmentsManagement(container) {

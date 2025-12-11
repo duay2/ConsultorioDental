@@ -55,7 +55,27 @@ class DentalRecord {
     // Buscar registro dental por ID
     async findById(recordId) {
         await this.init();
-        return await this.collection.findOne({ id: parseInt(recordId) });
+        const records = await this.collection.aggregate([
+            {
+                $match: { id: parseInt(recordId) }
+            },
+            {
+                $lookup: {
+                    from: 'patients',
+                    localField: 'patient_id',
+                    foreignField: 'id',
+                    as: 'patient_info'
+                }
+            },
+            {
+                $unwind: {
+                    path: '$patient_info',
+                    preserveNullAndEmptyArrays: true
+                }
+            }
+        ]).toArray();
+        
+        return records.length > 0 ? records[0] : null;
     }
 
     // Buscar registros por paciente

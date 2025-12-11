@@ -97,6 +97,41 @@ async function updatePatient(req, res, next) {
     if (!r.modifiedCount) return res.status(400).json({ error: 'No se actualizó' });
 
     const updated = await model.findById(id);
+    
+    // Actualizar el nombre del paciente en todas las citas relacionadas
+    // Solo si se actualizó first_name o last_name
+    if (data.first_name !== undefined || data.last_name !== undefined) {
+      try {
+        const Appointment = require('../models/Appointment');
+        const appointmentModel = new Appointment();
+        await appointmentModel.init();
+        
+        // Construir el nuevo nombre completo
+        const newFirstName = data.first_name !== undefined ? data.first_name : updated.first_name;
+        const newLastName = data.last_name !== undefined ? data.last_name : updated.last_name;
+        const newFullName = `${newFirstName || ''} ${newLastName || ''}`.trim();
+        
+        // Actualizar todas las citas que tienen este paciente
+        const appointmentsCollection = databaseConnection.getCollection('appointments');
+        const updateResult = await appointmentsCollection.updateMany(
+          { 'patient_info.id': id },
+          { 
+            $set: { 
+              'patient_info.name': newFullName,
+              'patient_info.first_name': newFirstName,
+              'patient_info.last_name': newLastName,
+              'patient_info.phone': updated.phone || exists.phone || ''
+            } 
+          }
+        );
+        
+        console.log(`[PatientController] Actualizadas ${updateResult.modifiedCount} citas del paciente ${id} con nuevo nombre: ${newFullName}`);
+      } catch (appointmentError) {
+        // No fallar la actualización del paciente si hay error al actualizar citas
+        console.error('[PatientController] Error al actualizar citas relacionadas:', appointmentError);
+      }
+    }
+    
     res.json({ message: 'Paciente actualizado', data: updated });
   } catch (e) { next(e); }
 }

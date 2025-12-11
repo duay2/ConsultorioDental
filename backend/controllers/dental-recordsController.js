@@ -16,10 +16,33 @@ const getAllDentalRecords = async (req, res, next) => {
         const dentalRecordModel = new DentalRecord();
         const result = await dentalRecordModel.findAll();
 
+        // Verificar si el usuario es secretaria (receptionist)
+        const userRole = req.user?.role?.toLowerCase();
+        const isSecretary = userRole === 'receptionist' || userRole === 'secretaria';
+
+        // Si es secretaria, ocultar el nombre del paciente en los registros
+        let processedRecords = result.records;
+        if (isSecretary) {
+            processedRecords = result.records.map(record => {
+                const recordCopy = { ...record };
+                // Si hay información del paciente, ocultar el nombre pero mantener otros datos
+                if (recordCopy.patient_info) {
+                    const { name, first_name, last_name, ...patientInfoWithoutName } = recordCopy.patient_info;
+                    recordCopy.patient_info = {
+                        ...patientInfoWithoutName,
+                        name: '***', // Ocultar nombre
+                        first_name: '***',
+                        last_name: '***'
+                    };
+                }
+                return recordCopy;
+            });
+        }
+
         res.status(200).json({
             message: 'Registros dentales obtenidos exitosamente',
-            data: result.records,
-            total: result.total
+            data: processedRecords,
+            total: processedRecords.length
         });
     } catch (error) {
         next(error);
@@ -48,9 +71,26 @@ const getDentalRecordById = async (req, res, next) => {
             });
         }
 
+        // Verificar si el usuario es secretaria (receptionist)
+        const userRole = req.user?.role?.toLowerCase();
+        const isSecretary = userRole === 'receptionist' || userRole === 'secretaria';
+
+        // Si es secretaria, ocultar el nombre del paciente
+        let processedRecord = record;
+        if (isSecretary && record.patient_info) {
+            processedRecord = { ...record };
+            const { name, first_name, last_name, ...patientInfoWithoutName } = processedRecord.patient_info;
+            processedRecord.patient_info = {
+                ...patientInfoWithoutName,
+                name: '***', // Ocultar nombre
+                first_name: '***',
+                last_name: '***'
+            };
+        }
+
         res.status(200).json({
             message: 'Registro dental obtenido exitosamente',
-            data: record
+            data: processedRecord
         });
     } catch (error) {
         next(error);
@@ -208,11 +248,34 @@ const getDentalRecordsByPatient = async (req, res, next) => {
         const dentalRecordModel = new DentalRecord();
         const records = await dentalRecordModel.findByPatient(patientId);
 
+        // Verificar si el usuario es secretaria (receptionist)
+        const userRole = req.user?.role?.toLowerCase();
+        const isSecretary = userRole === 'receptionist' || userRole === 'secretaria';
+
+        // Si es secretaria, ocultar el nombre del paciente en los registros
+        let processedRecords = records;
+        if (isSecretary) {
+            processedRecords = records.map(record => {
+                const recordCopy = { ...record };
+                // Si hay información del paciente, ocultar el nombre pero mantener otros datos
+                if (recordCopy.patient_info) {
+                    const { name, first_name, last_name, ...patientInfoWithoutName } = recordCopy.patient_info;
+                    recordCopy.patient_info = {
+                        ...patientInfoWithoutName,
+                        name: '***', // Ocultar nombre
+                        first_name: '***',
+                        last_name: '***'
+                    };
+                }
+                return recordCopy;
+            });
+        }
+
         res.status(200).json({
             message: 'Registros dentales obtenidos exitosamente',
             patient_id: patientId,
-            count: records.length,
-            data: records
+            count: processedRecords.length,
+            data: processedRecords
         });
     } catch (error) {
         next(error);

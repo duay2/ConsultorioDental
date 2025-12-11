@@ -211,6 +211,7 @@ class AppNavbar extends HTMLElement {
                         <a href="#" class="nav-link" data-section="citas-gestion">Gestión Citas</a>
                         <a href="#" class="nav-link" data-section="registros">Registros</a>
                         <a href="#" class="nav-link" data-section="inventario">Inventario</a>
+                        <a href="#" class="nav-link nav-link-users" data-section="usuarios" style="display: none;">Usuarios</a>
                     </div>
                 </div>
                 <div class="navbar-right">
@@ -267,6 +268,17 @@ class AppNavbar extends HTMLElement {
             
             if (user) {
                 this.updateUserInfo(user);
+                
+                // Mostrar enlace de usuarios solo para admin y doctor
+                const userRole = user.role?.toLowerCase();
+                const usersLink = this.shadowRoot.querySelector('.nav-link-users');
+                if (usersLink) {
+                    if (userRole === 'admin' || userRole === 'doctor') {
+                        usersLink.style.display = 'block';
+                    } else {
+                        usersLink.style.display = 'none';
+                    }
+                }
             } else {
                 // Si no hay usuario, mantener valores por defecto
                 const userNameEl = this.shadowRoot.querySelector('#user-name');

@@ -227,11 +227,24 @@ const getAppointmentsByPatientId = async (req, res, next) => {
         const appointments = await appointmentModel.findByPatientId(patientId);
         console.log(`[AppointmentController] Citas encontradas para paciente ${patientId}: ${appointments.length}`);
 
+        // Verificar si el usuario es secretaria (receptionist)
+        const userRole = req.user?.role?.toLowerCase();
+        const isSecretary = userRole === 'receptionist' || userRole === 'secretaria';
+
+        // Si es secretaria, ocultar la hora de las citas
+        let processedAppointments = appointments;
+        if (isSecretary) {
+            processedAppointments = appointments.map(appointment => {
+                const { appointment_time, time, ...appointmentWithoutTime } = appointment;
+                return appointmentWithoutTime;
+            });
+        }
+
         res.status(200).json({
             message: 'Citas obtenidas exitosamente',
             patient_id: patientId,
-            count: appointments.length,
-            data: appointments
+            count: processedAppointments.length,
+            data: processedAppointments
         });
     } catch (error) {
         next(error);

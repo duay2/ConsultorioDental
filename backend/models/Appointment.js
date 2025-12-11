@@ -116,7 +116,50 @@ class Appointment {
     // Buscar cita por ID
     async findById(appointmentId) {
         await this.init();
-        return await this.collection.findOne({ id: parseInt(appointmentId) });
+        const appointments = await this.collection.aggregate([
+            {
+                $match: { id: parseInt(appointmentId) }
+            },
+            {
+                $lookup: {
+                    from: 'patients',
+                    localField: 'patient_info.id',
+                    foreignField: 'id',
+                    as: 'patient_lookup'
+                }
+            },
+            {
+                $unwind: {
+                    path: '$patient_lookup',
+                    preserveNullAndEmptyArrays: true
+                }
+            },
+            {
+                $addFields: {
+                    'patient_info': {
+                        $cond: {
+                            if: { $ne: ['$patient_lookup', null] },
+                            then: {
+                                id: '$patient_info.id',
+                                name: { $concat: [{ $ifNull: ['$patient_lookup.first_name', ''] }, ' ', { $ifNull: ['$patient_lookup.last_name', ''] }] },
+                                first_name: '$patient_lookup.first_name',
+                                last_name: '$patient_lookup.last_name',
+                                phone: '$patient_lookup.phone',
+                                email: '$patient_lookup.email'
+                            },
+                            else: '$patient_info'
+                        }
+                    }
+                }
+            },
+            {
+                $project: {
+                    patient_lookup: 0
+                }
+            }
+        ]).toArray();
+        
+        return appointments.length > 0 ? appointments[0] : null;
     }
 
     // Buscar citas por fecha
@@ -160,17 +203,61 @@ class Appointment {
             console.log(`[Appointment Model] Rango UTC: ${startOfDay.toISOString()} a ${endOfDay.toISOString()}`);
             console.log(`[Appointment Model] También buscando por string: ${dateStr}`);
             
-            // Buscar citas que estén en el rango de fechas UTC O que tengan la fecha como string
-            const appointments = await this.collection.find({
-                $or: [
-                    // Buscar por rango de fechas (para fechas guardadas como Date)
-                    { appointment_date: { $gte: startOfDay, $lte: endOfDay } },
-                    // Buscar por fecha como string (para fechas guardadas como string)
-                    { appointment_date: dateStr },
-                    // Buscar por fecha que empiece con el string (para fechas ISO que incluyen la fecha)
-                    { appointment_date: { $regex: `^${dateStr}`, $options: 'i' } }
-                ]
-            }).sort({ appointment_time: 1 }).toArray();
+            // Buscar citas con lookup para obtener información actualizada del paciente
+            const appointments = await this.collection.aggregate([
+                {
+                    $match: {
+                        $or: [
+                            // Buscar por rango de fechas (para fechas guardadas como Date)
+                            { appointment_date: { $gte: startOfDay, $lte: endOfDay } },
+                            // Buscar por fecha como string (para fechas guardadas como string)
+                            { appointment_date: dateStr },
+                            // Buscar por fecha que empiece con el string (para fechas ISO que incluyen la fecha)
+                            { appointment_date: { $regex: `^${dateStr}`, $options: 'i' } }
+                        ]
+                    }
+                },
+                {
+                    $lookup: {
+                        from: 'patients',
+                        localField: 'patient_info.id',
+                        foreignField: 'id',
+                        as: 'patient_lookup'
+                    }
+                },
+                {
+                    $unwind: {
+                        path: '$patient_lookup',
+                        preserveNullAndEmptyArrays: true
+                    }
+                },
+                {
+                    $addFields: {
+                        'patient_info': {
+                            $cond: {
+                                if: { $ne: ['$patient_lookup', null] },
+                                then: {
+                                    id: '$patient_info.id',
+                                    name: { $concat: [{ $ifNull: ['$patient_lookup.first_name', ''] }, ' ', { $ifNull: ['$patient_lookup.last_name', ''] }] },
+                                    first_name: '$patient_lookup.first_name',
+                                    last_name: '$patient_lookup.last_name',
+                                    phone: '$patient_lookup.phone',
+                                    email: '$patient_lookup.email'
+                                },
+                                else: '$patient_info'
+                            }
+                        }
+                    }
+                },
+                {
+                    $project: {
+                        patient_lookup: 0
+                    }
+                },
+                {
+                    $sort: { appointment_time: 1 }
+                }
+            ]).toArray();
             
             console.log(`[Appointment Model] Citas encontradas: ${appointments.length}`);
             if (appointments.length > 0) {
@@ -178,18 +265,7 @@ class Appointment {
                     const aptDate = apt.appointment_date instanceof Date 
                         ? apt.appointment_date.toISOString() 
                         : apt.appointment_date;
-                    console.log(`[Appointment Model] Cita ${idx + 1}: id=${apt.id}, fecha=${aptDate}, time=${apt.appointment_time}`);
-                });
-            } else {
-                // Debug: ver todas las citas para entender el formato
-                const allAppointments = await this.collection.find({}).limit(10).toArray();
-                console.log(`[Appointment Model] Ejemplo de citas en BD (primeras 10):`);
-                allAppointments.forEach((apt, idx) => {
-                    const aptDate = apt.appointment_date instanceof Date 
-                        ? apt.appointment_date.toISOString() 
-                        : apt.appointment_date;
-                    const aptDateType = apt.appointment_date instanceof Date ? 'Date' : typeof apt.appointment_date;
-                    console.log(`  Cita ${idx + 1}: id=${apt.id}, fecha=${aptDate} (tipo: ${aptDateType}), time=${apt.appointment_time}`);
+                    console.log(`[Appointment Model] Cita ${idx + 1}: id=${apt.id}, fecha=${aptDate}, time=${apt.appointment_time}, paciente=${apt.patient_info?.name}`);
                 });
             }
             
@@ -204,23 +280,55 @@ class Appointment {
     async findByPatientId(patientId) {
         await this.init();
         console.log(`[Appointment Model] Buscando citas para patient_info.id: ${patientId}`);
-        const appointments = await this.collection.find(
-            { 'patient_info.id': parseInt(patientId) },
-            { projection: { type: 1, appointment_date: 1, notes: 1, precio_cita: 1, status: 1, _id: 0 } }
-        ).sort({ appointment_date: -1 }).toArray();
-        console.log(`[Appointment Model] Encontradas ${appointments.length} citas para paciente ${patientId}.`)
-        if (appointments.length === 0) {
-            console.log('[Appointment Model] No se encontraron citas. Buscando un ejemplo de documentos en la colección...');
-            const sampleDocs = await this.collection.find({}).limit(5).toArray();
-            if (sampleDocs.length > 0) {
-                console.log('[Appointment Model] Primeros 5 documentos de la colección:');
-                sampleDocs.forEach((doc, index) => {
-                    console.log(`  [${index}] id: ${doc.id}, patient_info.id: ${doc.patient_info?.id}, patient_info.name: ${doc.patient_info?.name}, appointment_date: ${doc.appointment_date}`);
-                });
-            } else {
-                console.log('[Appointment Model] La colección de citas está vacía.');
+        
+        const appointments = await this.collection.aggregate([
+            {
+                $match: { 'patient_info.id': parseInt(patientId) }
+            },
+            {
+                $lookup: {
+                    from: 'patients',
+                    localField: 'patient_info.id',
+                    foreignField: 'id',
+                    as: 'patient_lookup'
+                }
+            },
+            {
+                $unwind: {
+                    path: '$patient_lookup',
+                    preserveNullAndEmptyArrays: true
+                }
+            },
+            {
+                $addFields: {
+                    'patient_info': {
+                        $cond: {
+                            if: { $ne: ['$patient_lookup', null] },
+                            then: {
+                                id: '$patient_info.id',
+                                name: { $concat: [{ $ifNull: ['$patient_lookup.first_name', ''] }, ' ', { $ifNull: ['$patient_lookup.last_name', ''] }] },
+                                first_name: '$patient_lookup.first_name',
+                                last_name: '$patient_lookup.last_name',
+                                phone: '$patient_lookup.phone',
+                                email: '$patient_lookup.email'
+                            },
+                            else: '$patient_info'
+                        }
+                    }
+                }
+            },
+            {
+                $project: {
+                    patient_lookup: 0,
+                    _id: 0
+                }
+            },
+            {
+                $sort: { appointment_date: -1 }
             }
-        }
+        ]).toArray();
+        
+        console.log(`[Appointment Model] Encontradas ${appointments.length} citas para paciente ${patientId}.`)
         return appointments;
     }
 
@@ -228,10 +336,60 @@ class Appointment {
     async findAll(page = 1, limit = 10) {
         await this.init();
         const skip = (page - 1) * limit;
-        const [appointments, total] = await Promise.all([
-            this.collection.find({}).skip(skip).limit(limit).toArray(),
-            this.collection.countDocuments({})
-        ]);
+        
+        // Obtener total de citas
+        const total = await this.collection.countDocuments({});
+        
+        // Obtener citas con información actualizada del paciente usando lookup
+        const appointments = await this.collection.aggregate([
+            {
+                $lookup: {
+                    from: 'patients',
+                    localField: 'patient_info.id',
+                    foreignField: 'id',
+                    as: 'patient_lookup'
+                }
+            },
+            {
+                $unwind: {
+                    path: '$patient_lookup',
+                    preserveNullAndEmptyArrays: true
+                }
+            },
+            {
+                $addFields: {
+                    'patient_info': {
+                        $cond: {
+                            if: { $ne: ['$patient_lookup', null] },
+                            then: {
+                                id: '$patient_info.id',
+                                name: { $concat: [{ $ifNull: ['$patient_lookup.first_name', ''] }, ' ', { $ifNull: ['$patient_lookup.last_name', ''] }] },
+                                first_name: '$patient_lookup.first_name',
+                                last_name: '$patient_lookup.last_name',
+                                phone: '$patient_lookup.phone',
+                                email: '$patient_lookup.email'
+                            },
+                            else: '$patient_info'
+                        }
+                    }
+                }
+            },
+            {
+                $project: {
+                    patient_lookup: 0
+                }
+            },
+            {
+                $sort: { appointment_date: -1, appointment_time: 1 }
+            },
+            {
+                $skip: skip
+            },
+            {
+                $limit: limit
+            }
+        ]).toArray();
+        
         return { appointments, total, page, limit };
     }
 

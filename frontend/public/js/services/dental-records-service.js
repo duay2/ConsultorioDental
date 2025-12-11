@@ -58,7 +58,20 @@ class DentalRecordsService {
 
             // Procesar registros con información de pacientes
             return records.map(record => {
-                const patient = record.patient_id ? patientMap.get(record.patient_id) : null;
+                // Si el backend ya incluye patient_info (por ejemplo, cuando es secretaria y oculta el nombre),
+                // respetar esos datos. Solo agregar información del paciente si no existe.
+                let patientInfo = record.patient_info;
+                
+                if (!patientInfo && record.patient_id) {
+                    const patient = patientMap.get(record.patient_id);
+                    patientInfo = patient ? {
+                        id: patient.id,
+                        name: patient.name,
+                        first_name: patient.first_name,
+                        last_name: patient.last_name,
+                        email: patient.email
+                    } : { name: 'Paciente desconocido' };
+                }
 
                 return {
                     ...record,
@@ -67,14 +80,8 @@ class DentalRecordsService {
                     cost: record.treatment_cost || 0,
                     date: record.created_at,
                     notes: record.treatment_notes || '',
-                    // Información del paciente
-                    patient_info: patient ? {
-                        id: patient.id,
-                        name: patient.name,
-                        first_name: patient.first_name,
-                        last_name: patient.last_name,
-                        email: patient.email
-                    } : { name: 'Paciente desconocido' }
+                    // Información del paciente (respetar la que viene del backend)
+                    patient_info: patientInfo || { name: 'Paciente desconocido' }
                 };
             });
         } catch (error) {
@@ -98,9 +105,11 @@ class DentalRecordsService {
             const result = await response.json();
             const record = result.data;
 
-            // Obtener información del paciente si tiene patient_id
-            let patientInfo = { name: 'Paciente desconocido' };
-            if (record.patient_id) {
+            // Si el backend ya incluye patient_info (por ejemplo, cuando es secretaria y oculta el nombre),
+            // respetar esos datos. Solo obtener información del paciente si no existe.
+            let patientInfo = record.patient_info;
+            
+            if (!patientInfo && record.patient_id) {
                 try {
                     const patientService = (await import('./patient-service.js')).default;
                     const patient = await patientService.getPatientById(record.patient_id);
@@ -112,15 +121,18 @@ class DentalRecordsService {
                             last_name: patient.last_name,
                             email: patient.email
                         };
+                    } else {
+                        patientInfo = { name: 'Paciente desconocido' };
                     }
                 } catch (error) {
                     // Error obteniendo paciente individual
+                    patientInfo = { name: 'Paciente desconocido' };
                 }
             }
 
             return {
                 ...record,
-                patient_info: patientInfo
+                patient_info: patientInfo || { name: 'Paciente desconocido' }
             };
         } catch (error) {
             throw error;
