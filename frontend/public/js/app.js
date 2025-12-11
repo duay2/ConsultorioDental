@@ -4,6 +4,7 @@
  */
 
 // Importar todos los componentes
+import './components/confirm-dialog.js';
 import './components/navbar.js';
 import './components/login-view.js';
 import './components/dashboard-view.js';
@@ -15,6 +16,10 @@ import './components/inventory-table.js';
 import './components/inventory-row.js';
 import './components/table-pagination.js';
 import './components/inventory-modal.js';
+import './components/patients-view.js';
+import './components/patients-modal.js';
+import './components/patients-table.js';
+import './components/toast-notification.js';
 import './components/daily-agenda-view.js';
 import './components/agenda-row.js';
 import './components/time-slot.js';
@@ -164,6 +169,8 @@ function showDashboard(container) {
     }, 10);
 }
 
+
+
 /**
  * Muestra la vista de agenda diaria
  */
@@ -221,6 +228,9 @@ function setupEventListeners() {
                 showInventory(appRoot);
                 break;
             case 'pacientes':
+                appRoot.innerHTML = '<patients-view></patients-view>';
+                break;
+            case 'citas':
             case 'registros':
                 // Por ahora mostrar dashboard, luego se pueden crear vistas específicas
                 showDashboard(appRoot);
